@@ -233,13 +233,6 @@
                             <h2 class="text-2xl font-bold text-gray-800" data-i18n="campTitle">จัดการแคมเปญ</h2>
                             <p class="text-gray-500" data-i18n="campSubtitle">วิเคราะห์และเปิด/ปิดแคมเปญแบบ Real-time</p>
                         </div>
-                        <div class="flex items-center gap-3 bg-white p-1.5 rounded-lg border border-gray-200 shadow-sm">
-                            <span class="text-sm font-bold text-gray-600 pl-2">เลือก <span id="campSelectedCount" class="text-fb-blue">0</span> รายการ</span>
-                            <div class="h-6 w-px bg-gray-300"></div>
-                            <button onclick="window.openDuplicateModal()" class="bg-indigo-500 hover:bg-indigo-600 text-white px-5 py-1.5 rounded-md font-bold text-sm transition shadow-sm flex items-center opacity-50 pointer-events-none" id="btnDuplicate">
-                                <i class="fa-solid fa-copy mr-1.5"></i> <span data-i18n="btnCreate">สร้างซ้ำแคมเปญ</span>
-                            </button>
-                        </div>
                     </div>
 
                     <!-- AI Summary Banner -->
@@ -256,7 +249,6 @@
                             <table class="w-full text-left border-collapse whitespace-nowrap relative">
                                 <thead class="sticky top-0 z-20">
                                     <tr class="bg-gray-50 text-xs text-text-muted font-bold uppercase shadow-sm border-b border-gray-200">
-                                        <th class="p-4 w-10 text-center bg-gray-50"><input type="checkbox" id="selectAllCamps" onclick="window.toggleAllCamps(this)" class="w-4 h-4 text-fb-blue rounded cursor-pointer"></th>
                                         <th class="p-4 w-16 text-center bg-gray-50" data-i18n="colOnOff">เปิด/ปิด</th>
                                         <th class="p-4 bg-gray-50 text-center">คำแนะนำ AI</th>
                                         <th class="p-4 min-w-[200px] bg-gray-50" data-i18n="colName">ชื่อแคมเปญ</th>
@@ -276,7 +268,7 @@
                                     </tr>
                                 </thead>
                                 <tbody class="text-sm" id="campaignTableBody">
-                                    <tr><td colspan="17" class="p-6 text-center text-gray-500">กรุณากด "ซิงค์ข้อมูล" เพื่อดึงแคมเปญจริง</td></tr>
+                                    <tr><td colspan="16" class="p-6 text-center text-gray-500">กรุณากด "ซิงค์ข้อมูล" เพื่อดึงแคมเปญจริง</td></tr>
                                 </tbody>
                             </table>
                         </div>
@@ -377,7 +369,7 @@
                         </div>
                     </div>
 
-                    <!-- FOLDER MANAGEMENT TABS (NEW) -->
+                    <!-- FOLDER MANAGEMENT TABS -->
                     <div class="max-w-4xl bg-white border border-gray-200 rounded-xl p-4 mb-6 shadow-sm">
                         <div class="flex items-center justify-between mb-3">
                             <h3 class="font-bold text-gray-800 text-sm"><i class="fa-regular fa-folder-open text-fb-blue mr-1"></i> <span data-i18n="ruleFolderLabel">โฟลเดอร์สำหรับแยกกฎ</span></h3>
@@ -702,7 +694,6 @@
                             <div id="adAccountsContainer" class="space-y-3">
                                 <!-- ช่องใส่บัญชีโฆษณาจะถูกสร้างที่นี่โดยอัตโนมัติ -->
                             </div>
-                            <!-- ปุ่มเพิ่ม Ad Account ที่ได้รับการแก้ไขแล้ว -->
                             <button onclick="window.addAdAccountInput()" class="mt-3 text-sm text-fb-blue font-bold hover:underline flex items-center"><i class="fa-solid fa-plus mr-1"></i> เพิ่ม Ad Account</button>
                             
                             <p class="text-xs text-emerald-600 mt-6 font-medium" data-i18n="setTokenDesc"><i class="fa-solid fa-lock mr-1"></i> Token ของคุณจะถูกเก็บไว้ในบัญชีส่วนตัว (ไม่ปะปนกับพนักงานคนอื่น)</p>
@@ -714,42 +705,6 @@
 
             </div>
         </main>
-    </div>
-
-    <!-- Modal: Duplicate Campaign Setup -->
-    <div id="duplicateModal" class="fixed inset-0 bg-black/60 z-[150] hidden flex items-center justify-center p-4 backdrop-blur-sm transition-all duration-300">
-        <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden flex flex-col animate-fade-in border border-gray-100">
-            <div class="flex justify-between items-center p-5 border-b border-gray-100 bg-gray-50/80">
-                <h3 class="font-bold text-lg text-gray-800"><i class="fa-solid fa-copy text-fb-blue mr-2"></i> ตั้งค่าการสร้างซ้ำ</h3>
-                <button onclick="document.getElementById('duplicateModal').classList.add('hidden')" class="text-gray-400 hover:text-gray-700 w-8 h-8 rounded-full flex items-center justify-center transition"><i class="fa-solid fa-xmark text-lg"></i></button>
-            </div>
-            <div class="p-6 space-y-5">
-                <div>
-                    <label class="block text-sm font-bold text-gray-700 mb-2">จำนวนชุดที่ต้องการสร้างซ้ำ</label>
-                    <input type="number" id="dupInputCount" value="1" min="1" max="20" class="w-full border border-gray-300 rounded-lg p-3 outline-none focus:border-fb-blue focus:ring-1 focus:ring-fb-blue bg-gray-50 font-bold">
-                </div>
-                <div>
-                    <label class="block text-sm font-bold text-gray-700 mb-1">งบประมาณต่อวันใหม่ (บาท)</label>
-                    <p class="text-[11px] text-gray-400 mb-2">เว้นว่างไว้ หากใช้เงินเท่าเดิม</p>
-                    <div class="relative">
-                        <span class="absolute inset-y-0 left-0 pl-4 flex items-center text-gray-500 font-bold pointer-events-none">฿</span>
-                        <input type="number" id="dupInputBudget" placeholder="เช่น 500" class="w-full border border-gray-300 rounded-lg p-3 pl-8 outline-none focus:border-fb-blue focus:ring-1 focus:ring-fb-blue font-bold">
-                    </div>
-                </div>
-                <div>
-                    <label class="block text-sm font-bold text-gray-700 mb-1">เวลาเริ่มรันแอด (เว้นว่างได้)</label>
-                    <input type="datetime-local" id="dupInputTime" class="w-full border border-gray-300 rounded-lg p-3 outline-none focus:border-fb-blue focus:ring-1 focus:ring-fb-blue">
-                </div>
-                <div class="bg-blue-50 p-4 rounded-xl border border-blue-100 flex items-start gap-3">
-                    <i class="fa-solid fa-info-circle text-fb-blue mt-0.5"></i>
-                    <p class="text-xs text-fb-dark font-medium leading-relaxed">ระบบจะใช้วิธีทยอยโคลน (ดึงทีละชุดโฆษณาและชิ้นงานโฆษณาของแคมเปญที่เลือกมาเท่านั้น) เพื่อป้องกัน Facebook บล็อก</p>
-                </div>
-            </div>
-            <div class="p-5 border-t border-gray-100 flex gap-3 bg-gray-50/50">
-                <button onclick="document.getElementById('duplicateModal').classList.add('hidden')" class="px-6 bg-white border border-gray-200 text-gray-700 font-bold rounded-lg transition shadow-sm">ยกเลิก</button>
-                <button onclick="window.confirmDuplicateCamps()" class="flex-1 font-bold py-2.5 rounded-lg transition text-white shadow-md flex items-center justify-center gap-2 bg-fb-blue hover:bg-fb-dark" id="btnConfirmDup"><i class="fa-solid fa-bolt"></i> เริ่มสร้างซ้ำ</button>
-            </div>
-        </div>
     </div>
 
     <!-- Modal: View Creative -->
@@ -797,7 +752,6 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getFirestore, collection, getDocs, setDoc, doc, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // คอนฟิกฐานข้อมูล Firebase ของคุณ
         const firebaseConfig = {
           apiKey: "AIzaSyDHyWHaDE2CqjQUqjAoO6TSXimdxyyugv8",
           authDomain: "pkadscale-pro.firebaseapp.com",
@@ -826,7 +780,6 @@
         const purTypesList = ['purchase', 'omni_purchase', 'offsite_conversion.fb_pixel_purchase'];
         const msgTypesList = ['onsite_conversion.messaging_conversation_started_7d', 'onsite_conversion.messaging_first_reply', 'messages'];
 
-        // ระบบเชื่อมต่อ Firestore
         const dbService = {
             getEmployees: async () => {
                 try {
@@ -1044,7 +997,7 @@
             globalCampaignsData = [];
             globalChartData = [];
             window.ruleFolders = [];
-            document.getElementById('campaignTableBody').innerHTML = '<tr><td colspan="15" class="p-6 text-center text-gray-500">กรุณากด "ซิงค์ข้อมูล" เพื่อดึงแคมเปญจริง</td></tr>';
+            document.getElementById('campaignTableBody').innerHTML = '<tr><td colspan="16" class="p-6 text-center text-gray-500">กรุณากด "ซิงค์ข้อมูล" เพื่อดึงแคมเปญจริง</td></tr>';
             
             const kpis = ['spend', 'cost-msg', 'cost-pur', 'roas', 'ctr', 'cpm'];
             kpis.forEach(k => {
@@ -1224,11 +1177,9 @@
 
         window.removeAdAccountInput = function(btn) {
             const container = document.getElementById('adAccountsContainer');
-            // เช็คว่ามีช่องกรอกเหลือมากกว่า 1 ช่อง ถึงจะยอมให้ลบ
             if (container.children.length > 1) {
                 btn.parentElement.remove();
             } else {
-                // ถ้าเหลือช่องเดียว ให้เคลียร์ค่าเฉยๆ
                 btn.parentElement.querySelector('input').value = '';
                 window.showToast("ต้องมีอย่างน้อย 1 บัญชีโฆษณา");
             }
@@ -1441,6 +1392,7 @@
                 }
                 window.populateABDropdowns();
                 window.populateCreativeDropdown(); 
+                
                 const tbody = document.getElementById('campaignTableBody');
                 tbody.innerHTML = ''; 
                 let chartItems = [];
@@ -1555,6 +1507,7 @@
                         tbody.appendChild(tr);
                     });
                     document.getElementById('campAiSummary').innerText = `พบแคมเปญที่ควร "สร้างซ้ำ" ${winnerCampCount} ตัว และควร "ปิด" ${loserCampCount} ตัว`;
+                    
                     const tCpm = sumImps > 0 ? (sumSpend / sumImps) * 1000 : 0;
                     const tCtr = sumImps > 0 ? (sumClicks / sumImps) * 100 : 0;
                     const tCostMsg = sumMsgs > 0 ? sumSpend / sumMsgs : 0;
@@ -1562,6 +1515,7 @@
                     const tRoas = sumSpend > 0 ? sumConvVal / sumSpend : 0;
                     const tAdSpendPct = sumConvVal > 0 ? (sumSpend / sumConvVal) * 100 : 0;
                     const tClosingRate = sumMsgs > 0 ? (sumPurchases / sumMsgs) * 100 : 0;
+                    
                     const totalTr = document.createElement('tr');
                     totalTr.className = "bg-fb-light border-t-2 border-fb-blue font-bold text-gray-800 sticky bottom-0 z-10"; 
                     totalTr.innerHTML = `
@@ -1586,21 +1540,24 @@
                     globalChartData = chartItems;
                     window.renderDashboardChart();
                 } else {
-                    tbody.innerHTML = '<tr><td colspan="15" class="p-6 text-center text-gray-500">ไม่พบแคมเปญในช่วงเวลานี้</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="16" class="p-6 text-center text-gray-500">ไม่พบแคมเปญในช่วงเวลานี้</td></tr>';
                     globalChartData = [];
                     window.renderDashboardChart();
                     document.getElementById('campAiSummary').innerText = `รอแคมเปญทำงานเพื่อวิเคราะห์ข้อมูล`;
                 }
+                
                 try {
                     const urlDemo = `https://graph.facebook.com/v21.0/${formattedAdAcc}/insights?breakdowns=age,gender&fields=spend,actions,action_values&date_preset=${currentDatePreset}&use_account_attribution_setting=true&limit=500&access_token=${token}`;
                     const dataDemo = await window.fetchFB(urlDemo);
                     window.renderDemographics(dataDemo.data);
                 } catch(e) { console.warn("Demo Error", e); }
+                
                 try {
                     const urlPlace = `https://graph.facebook.com/v21.0/${formattedAdAcc}/insights?breakdowns=publisher_platform,platform_position&fields=spend,actions,action_values&date_preset=${currentDatePreset}&use_account_attribution_setting=true&limit=500&access_token=${token}`;
                     const dataPlace = await window.fetchFB(urlPlace);
                     window.renderPlacements(dataPlace.data);
                 } catch(e) { console.warn("Placement Error", e); }
+                
                 const now = new Date();
                 document.getElementById('lastSyncTime').innerText = now.getHours() + ':' + String(now.getMinutes()).padStart(2, '0');
                 if(!silent) window.showToast(currentLang === 'th' ? "ดึงข้อมูลจริงสำเร็จ!" : "Data synced & analyzed!");
@@ -1664,6 +1621,7 @@
                 const spend = parseFloat(ins.spend || 0);
                 const purchases = parseInt(window.getFbActionVal(ins.actions, purTypesList));
                 const convVal = window.getFbActionVal(ins.action_values, purTypesList);
+                const costPur = purchases > 0 ? spend / purchases : 0;
                 const roas = spend > 0 ? convVal / spend : 0;
                 if (purchases > 0 && roas >= 2.0) winnerCount++;
                 else if ((spend > 400 && purchases === 0) || (roas > 0 && roas < 1.5 && spend > 300)) loserCount++;
@@ -1951,11 +1909,8 @@
 
         window.switchFolder = function(folderId) {
             if(window.currentFolderId === folderId) return;
-            // 1. บันทึกข้อมูลที่กำลังพิมพ์อยู่ในหน้าจอตอนนี้ เข้า memory โฟลเดอร์เดิม
             window.readRulesFromDOM(); 
-            // 2. สลับ ID
             window.currentFolderId = folderId;
-            // 3. เรนเดอร์ UI ใหม่
             window.renderFolderTabs();
             window.renderFolderContent();
         };
@@ -1990,7 +1945,7 @@
             if(current) {
                 current.name = document.getElementById('activeFolderName').value.trim();
                 current.keyword = document.getElementById('activeFolderKeyword').value.trim();
-                window.renderFolderTabs(); // update text on tab
+                window.renderFolderTabs();
             }
         };
 
@@ -2024,7 +1979,7 @@
                     const andHtml = idx > 0 ? '<div class="pl-4 border-l-2 border-gray-300 ml-4 py-1 mb-3 condition-separator"><span class="text-xs font-bold text-gray-500 bg-gray-100 px-2 py-1 rounded" data-i18n="ruleAnd">และ (AND)</span></div>' : '';
                     conditionsHtml += `
                         ${andHtml}
-                        <div class="condition-item flex items-center gap-3">
+                        <div class="condition-item flex items-center gap-3 w-full">
                             <select class="w-1/3 border border-gray-300 rounded-lg p-2.5 outline-none">
                                 <option value="cost_per_purchase" ${cond.metric === 'cost_per_purchase' ? 'selected' : ''}>Cost per Purchase (ต้นทุนซื้อ)</option>
                                 <option value="cost_per_msg" ${cond.metric === 'cost_per_msg' ? 'selected' : ''}>Cost per Message (ต้นทุนทัก)</option>
@@ -2039,13 +1994,13 @@
                                 <option value="<" ${cond.operator === '<' ? 'selected' : ''}>น้อยกว่า (<)</option>
                             </select>
                             <input type="number" value="${cond.value}" placeholder="e.g. 500" class="w-1/4 border border-gray-300 rounded-lg p-2.5 outline-none">
-                            <button onclick="window.removeCondition(this)" class="text-red-500 hover:bg-red-50 p-2 rounded"><i class="fa-solid fa-trash"></i></button>
+                            <button onclick="window.removeCondition(this)" class="text-red-500 hover:bg-red-50 p-2 rounded shrink-0"><i class="fa-solid fa-trash"></i></button>
                         </div>
                     `;
                 });
             } else {
                 conditionsHtml = `
-                    <div class="condition-item flex items-center gap-3">
+                    <div class="condition-item flex items-center gap-3 w-full">
                         <select class="w-1/3 border border-gray-300 rounded-lg p-2.5 outline-none">
                             <option value="cost_per_purchase">Cost per Purchase (ต้นทุนซื้อ)</option>
                             <option value="cost_per_msg">Cost per Message (ต้นทุนทัก)</option>
@@ -2060,7 +2015,7 @@
                             <option value="<">น้อยกว่า (<)</option>
                         </select>
                         <input type="number" placeholder="e.g. 500" class="w-1/4 border border-gray-300 rounded-lg p-2.5 outline-none">
-                        <button onclick="window.removeCondition(this)" class="text-red-500 hover:bg-red-50 p-2 rounded"><i class="fa-solid fa-trash"></i></button>
+                        <button onclick="window.removeCondition(this)" class="text-red-500 hover:bg-red-50 p-2 rounded shrink-0"><i class="fa-solid fa-trash"></i></button>
                     </div>
                 `;
             }
@@ -2079,10 +2034,16 @@
                             <option value="activate" ${action === 'activate' ? 'selected' : ''}>เปิดแคมเปญ (Activate)</option>
                             <option value="inc_budget" ${action === 'inc_budget' ? 'selected' : ''}>เพิ่มงบประมาณ (%)</option>
                             <option value="dec_budget" ${action === 'dec_budget' ? 'selected' : ''}>ลดงบประมาณ (%)</option>
+                            <option value="reset_budget" ${action === 'reset_budget' ? 'selected' : ''}>รีเซ็ตงบประมาณ</option>
                         </select>
                         <div class="action-value-box ${(action === 'inc_budget' || action === 'dec_budget') ? 'flex' : 'hidden'} gap-2 items-center">
                             <input type="number" value="${actionVal}" placeholder="20" class="action-value-input w-20 border border-gray-300 rounded-lg p-2.5 text-center">
                             <span class="font-bold text-gray-600">%</span>
+                        </div>
+                        <div class="action-reset-box ${action === 'reset_budget' ? 'flex' : 'hidden'} gap-2 items-center">
+                            <span class="font-bold text-gray-600" data-i18n="lblTo">เป็น</span>
+                            <input type="number" value="${actionVal}" placeholder="1000" class="action-reset-input w-24 border border-gray-300 rounded-lg p-2.5 text-center">
+                            <span class="font-bold text-gray-600" data-i18n="lblBaht">บาท</span>
                         </div>
                     </div>
                 </div>
@@ -2104,13 +2065,14 @@
 
         window.removeRuleBlock = function(btn) {
             btn.closest('.rule-card').remove();
-            window.readRulesFromDOM(); // Update State immediately
+            window.readRulesFromDOM(); 
         };
 
         window.toggleActionInputs = function(selectEl) {
             const ruleCard = selectEl.closest('.rule-card');
             const val = selectEl.value;
             ruleCard.querySelector('.action-value-box').classList.toggle('hidden', val !== 'inc_budget' && val !== 'dec_budget');
+            ruleCard.querySelector('.action-reset-box').classList.toggle('hidden', val !== 'reset_budget');
         };
 
         window.removeCondition = function(btn) {
@@ -2127,9 +2089,9 @@
             const ruleCard = btn.closest('.rule-card');
             const container = ruleCard.querySelector('.conditions-container');
             const div = document.createElement('div');
-            div.className = 'condition-item mt-3 flex items-center gap-3';
+            div.className = 'condition-item mt-3 flex items-center gap-3 w-full';
             const andHtml = container.children.length > 0 ? '<div class="pl-4 border-l-2 border-gray-300 ml-4 py-1 mb-3 condition-separator"><span class="text-xs font-bold text-gray-500 bg-gray-100 px-2 py-1 rounded" data-i18n="ruleAnd">และ (AND)</span></div>' : '';
-            div.innerHTML = `${andHtml}<div class="flex items-center gap-3 w-full"><select class="w-1/3 border border-gray-300 rounded-lg p-2.5 outline-none"><option value="cost_per_purchase">Cost per Purchase (ต้นทุนซื้อ)</option><option value="cost_per_msg">Cost per Message (ต้นทุนทัก)</option><option value="roas">ROAS</option><option value="purchases">จำนวนการซื้อ (Purchases)</option><option value="spend">Spend (ยอดใช้จ่าย)</option><option value="ctr">CTR</option><option value="cpm">CPM</option></select><select class="w-1/4 border border-gray-300 rounded-lg p-2.5 outline-none"><option value=">">มากกว่า (>)</option><option value="<">น้อยกว่า (<)</option></select><input type="number" placeholder="e.g. 500" class="w-1/4 border border-gray-300 rounded-lg p-2.5 outline-none"><button onclick="window.removeCondition(this)" class="text-red-500 hover:bg-red-50 p-2 rounded shrink-0"><i class="fa-solid fa-trash"></i></button></div>`;
+            div.innerHTML = `${andHtml}<select class="w-1/3 border border-gray-300 rounded-lg p-2.5 outline-none"><option value="cost_per_purchase">Cost per Purchase (ต้นทุนซื้อ)</option><option value="cost_per_msg">Cost per Message (ต้นทุนทัก)</option><option value="roas">ROAS</option><option value="purchases">จำนวนการซื้อ (Purchases)</option><option value="spend">Spend (ยอดใช้จ่าย)</option><option value="ctr">CTR</option><option value="cpm">CPM</option></select><select class="w-1/4 border border-gray-300 rounded-lg p-2.5 outline-none"><option value=">">มากกว่า (>)</option><option value="<">น้อยกว่า (<)</option></select><input type="number" placeholder="e.g. 500" class="w-1/4 border border-gray-300 rounded-lg p-2.5 outline-none"><button onclick="window.removeCondition(this)" class="text-red-500 hover:bg-red-50 p-2 rounded shrink-0"><i class="fa-solid fa-trash"></i></button>`;
             container.appendChild(div);
             window.updateTexts();
         };
@@ -2144,10 +2106,13 @@
                 const nameInput = card.querySelector('.rule-name-input');
                 const actionSelect = card.querySelector('.action-select');
                 const actionValInput = card.querySelector('.action-value-input');
+                const actionResetInput = card.querySelector('.action-reset-input');
                 
                 const name = nameInput ? nameInput.value : '';
                 const action = actionSelect ? actionSelect.value : 'pause';
-                const actionVal = actionValInput ? actionValInput.value : '';
+                let actionVal = '';
+                if(action === 'inc_budget' || action === 'dec_budget') actionVal = actionValInput ? actionValInput.value : '';
+                else if(action === 'reset_budget') actionVal = actionResetInput ? actionResetInput.value : '';
                 
                 const conditions = [];
                 card.querySelectorAll('.condition-item').forEach(item => {
@@ -2173,75 +2138,48 @@
             }
         };
 
-        window.saveRules = async function(btn) {
-            if(!loggedInEmployee) return window.showToast("กรุณาเข้าสู่ระบบก่อน");
-            
-            // อ่านค่าล่าสุดจาก DOM เข้า State ก่อน
-            window.readRulesFromDOM();
-
-            const origHtml = btn.innerHTML;
-            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i> กำลังบันทึก...';
-            btn.disabled = true;
-
-            try {
-                loggedInEmployee.rule_folders = window.ruleFolders;
-                await dbService.updateEmployee(loggedInEmployee.id, { rule_folders: window.ruleFolders });
-                window.showToast(currentLang === 'th' ? 'บันทึกโฟลเดอร์และกฎลง Cloud สำเร็จ!' : 'Folders & Rules saved to Cloud!');
-            } catch(e) {
-                console.error(e);
-                window.showToast("เกิดข้อผิดพลาดในการบันทึก");
-            } finally {
-                btn.innerHTML = origHtml;
-                btn.disabled = false;
-            }
-        };
-
         window.runAutomatedRules = async function(silent = false) {
             if (!globalCampaignsData || globalCampaignsData.length === 0) {
                 if(!silent) window.showToast("กรุณาซิงค์ข้อมูลให้สำเร็จก่อนรันกฎ");
                 return;
             }
             
-            // ใช้ Rule ล่าสุดที่เพิ่งแก้ไขในหน้าจอรวมด้วย
             window.readRulesFromDOM();
             
-            const folders = window.ruleFolders || [];
-            if(folders.length === 0) {
-                if(!silent) window.showToast("ยังไม่มีโฟลเดอร์และกฎที่ตั้งไว้");
+            if(window.ruleFolders.length === 0) {
+                if(!silent) window.showToast("ยังไม่มีกฎที่ตั้งไว้");
                 return;
             }
 
-            if(!silent) window.showToast("กำลังประมวลผลกฎจากทุกโฟลเดอร์...");
+            if(!silent) window.showToast("กำลังประมวลผลกฎทั้งหมด...");
             let triggeredCount = 0;
 
-            for (let folder of folders) {
-                const keyword = (folder.keyword || '').trim().toLowerCase();
-                const rules = folder.rules || [];
+            for (let folder of window.ruleFolders) {
+                if (!folder.rules || folder.rules.length === 0) continue;
                 
-                if (rules.length === 0) continue;
+                let targetCampaigns = globalCampaignsData;
+                if (folder.keyword && folder.keyword.trim() !== '') {
+                    const kw = folder.keyword.trim().toLowerCase();
+                    targetCampaigns = globalCampaignsData.filter(c => c.name.toLowerCase().includes(kw));
+                }
 
-                for (let rule of rules) {
+                if (targetCampaigns.length === 0) continue;
+
+                for (let rule of folder.rules) {
                     const action = rule.action;
-                    const conditionItems = rule.conditions || [];
-                    if (conditionItems.length === 0) continue;
+                    if (!rule.conditions || rule.conditions.length === 0) continue;
 
-                    for (let camp of globalCampaignsData) {
-                        // **ระบบคัดกรองโฟลเดอร์ (Folder Keyword Filter)**
-                        if (keyword !== '') {
-                            if (!camp.name.toLowerCase().includes(keyword)) {
-                                continue; // ข้ามแคมเปญนี้ไปเลย ถ้าชื่อไม่ตรง Keyword ของโฟลเดอร์
-                            }
-                        }
-
+                    for (let camp of targetCampaigns) {
                         let isMatchAll = true;
+                        
                         if (action === 'activate' && camp.status === 'ACTIVE') isMatchAll = false;
                         if (action === 'pause' && camp.status !== 'ACTIVE') isMatchAll = false;
 
                         if (isMatchAll) {
-                            conditionItems.forEach(cond => {
+                            rule.conditions.forEach(cond => {
                                 const metric = cond.metric;
                                 const operator = cond.operator;
-                                const val = cond.value;
+                                const val = parseFloat(cond.value) || 0;
 
                                 let campVal = 0;
                                 if (metric === 'spend') campVal = camp.spendNum || 0;
@@ -2266,15 +2204,19 @@
                                 await window.toggleRealCampaign(camp.id, true);
                             } else if (action === 'pause') {
                                 await window.toggleRealCampaign(camp.id, false);
-                            } else if (action === 'inc_budget' || action === 'dec_budget') {
+                            } else if (action === 'inc_budget' || action === 'dec_budget' || action === 'reset_budget') {
                                 let currentBudget = parseFloat(camp.daily_budget) || 0;
                                 if (currentBudget > 0) {
                                     let newBudget = currentBudget;
-                                    const pct = parseFloat(rule.actionVal) || 0;
                                     if (action === 'inc_budget') {
+                                        const pct = parseFloat(rule.actionVal) || 0;
                                         newBudget = currentBudget + (currentBudget * (pct / 100));
                                     } else if (action === 'dec_budget') {
+                                        const pct = parseFloat(rule.actionVal) || 0;
                                         newBudget = currentBudget - (currentBudget * (pct / 100));
+                                    } else if (action === 'reset_budget') {
+                                        const val = parseFloat(rule.actionVal) || 0;
+                                        newBudget = val * 100;
                                     }
                                     
                                     if (newBudget !== currentBudget) {
@@ -2309,11 +2251,10 @@
                     return window.showToast("กรุณาตั้งค่า Token ก่อนเปิดบอท");
                 }
                 const mins = parseInt(document.getElementById('autoBotInterval').value);
-                statusText.innerHTML = `สถานะ: <span class="text-emerald-600 font-bold">🟢 กำลังเฝ้าระวัง (สแกนทุกโฟลเดอร์ ทุกๆ ${mins} นาที)</span>`;
+                statusText.innerHTML = `สถานะ: <span class="text-emerald-600 font-bold">🟢 กำลังเฝ้าระวัง (สแกนทุกๆ ${mins} นาที)</span>`;
                 
                 if(autoBotTimer) clearInterval(autoBotTimer);
                 
-                // สั่งรันรอบแรกทันทีเมื่อเปิดบอท
                 window.syncData(true).then(() => window.runAutomatedRules(true));
 
                 autoBotTimer = setInterval(async () => {
@@ -2321,9 +2262,9 @@
                     await window.runAutomatedRules(true);
                 }, mins * 60 * 1000);
                 
-                window.showToast(`🤖 บอทเริ่มทำงาน จะสแกนหาแคมเปญที่เข้าเงื่อนไขทุก ${mins} นาที (โปรดเปิดหน้านี้ทิ้งไว้)`);
+                window.showToast(`🤖 บอทเริ่มทำงาน จะสแกนทุก ${mins} นาที (โปรดเปิดหน้านี้ทิ้งไว้)`);
             } else {
-                statusText.innerHTML = `สถานะ: <span class="text-gray-500 font-bold">🔴 ปิดการทำงาน</span> (ระบบจะทำงานเมื่อเปิดหน้านี้ทิ้งไว้)`;
+                statusText.innerHTML = `สถานะ: <span class="text-gray-500 font-bold">🔴 ปิดการทำงาน</span> (จะรันทุกโฟลเดอร์เมื่อเปิด)`;
                 if(autoBotTimer) clearInterval(autoBotTimer);
                 autoBotTimer = null;
                 window.showToast("ปิดการทำงานบอทอัตโนมัติแล้ว");
@@ -2334,6 +2275,28 @@
             const toggle = document.getElementById('toggleAutoBot');
             if (toggle.checked) {
                 window.toggleAutoBot(true);
+            }
+        };
+
+        window.saveRules = async function(btn) {
+            if(!loggedInEmployee) return window.showToast("กรุณาเข้าสู่ระบบก่อน");
+            
+            window.readRulesFromDOM();
+
+            const origHtml = btn.innerHTML;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i> กำลังบันทึก...';
+            btn.disabled = true;
+
+            try {
+                loggedInEmployee.rule_folders = window.ruleFolders;
+                await dbService.updateEmployee(loggedInEmployee.id, { rule_folders: window.ruleFolders });
+                window.showToast(currentLang === 'th' ? 'บันทึกโฟลเดอร์และกฎลง Cloud สำเร็จ!' : 'Folders & Rules saved to Cloud!');
+            } catch(e) {
+                console.error(e);
+                window.showToast("เกิดข้อผิดพลาดในการบันทึก");
+            } finally {
+                btn.innerHTML = origHtml;
+                btn.disabled = false;
             }
         };
 
@@ -2382,6 +2345,7 @@
             }
 
             const budgetPerPage = totalBudget / totalPages;
+            
             let campsPerPage = 1;
 
             if (strategy === 'ant_army') {
@@ -2402,12 +2366,15 @@
 
             let advice = "";
             let allocations = [];
+
             let objName = campaignGoal.includes('sales') ? "ยอดขาย (Sales)" : (campaignGoal === 'lead' ? "ข้อมูลผู้มุ่งหวัง (Leads)" : "การมีส่วนร่วม/รับรู้");
             let subObj = campaignGoal === 'msg_sales' ? "แอปรับส่งข้อความ (Messenger/Line)" : (campaignGoal === 'web_sales' ? "คอนเวอร์ชั่นบนเว็บไซต์" : "ฟอร์มสำเร็จรูป / เพจเฟสบุ๊ค");
 
             if (budgetPerPage < 150) {
                 advice = `<span class="text-red-600 font-bold"><i class="fa-solid fa-triangle-exclamation"></i> ข้อควรระวัง (งบจำกัด):</span> งบ <strong>฿${budgetPerPage.toFixed(0)}/เพจ</strong> น้อยเกินไป AI แนะนำให้ <strong>ยุบรวมเหลือ 1 แคมเปญแบบ CBO/Advantage+</strong> รวมงบทั้งหมดไปเลยเพื่อให้ AI พอทำงานได้ครับ!`;
-                allocations = [{ obj: `วัตถุประสงค์: ${objName}`, pct: 100, iconColor: "text-emerald-600 bg-emerald-100", barColor: "bg-emerald-500", textColor: "text-emerald-600", icon: "fa-bolt", desc: `<strong>เป้าหมาย (Conversion Location):</strong> ${subObj}<br>ทุ่มงบทั้งหมดเพื่อผลลัพธ์หลัก เปิดเป้าหมายกว้างๆ (Broad) ให้ AI หากลุ่มเป้าหมายเอง` }];
+                allocations = [
+                    { obj: `วัตถุประสงค์: ${objName}`, pct: 100, iconColor: "text-emerald-600 bg-emerald-100", barColor: "bg-emerald-500", textColor: "text-emerald-600", icon: "fa-bolt", desc: `<strong>เป้าหมาย (Conversion Location):</strong> ${subObj}<br>ทุ่มงบทั้งหมดเพื่อผลลัพธ์หลัก เปิดเป้าหมายกว้างๆ (Broad) ให้ AI หากลุ่มเป้าหมายเอง` }
+                ];
                 campsPerPage = 1;
                 document.getElementById('resCampsPerPage').innerText = '1 แคมเปญ';
                 document.getElementById('resBudgetPerCamp').innerText = '฿' + budgetPerPage.toLocaleString(undefined, {minimumFractionDigits: 0, maximumFractionDigits: 0});
@@ -2542,7 +2509,6 @@
             
             window.showToast(currentLang === 'th' ? "ล้างข้อมูลเรียบร้อย" : "Cleared!");
         };
-
     </script>
 </body>
 </html>
