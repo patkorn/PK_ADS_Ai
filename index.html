@@ -1033,25 +1033,38 @@
         window.syncBotUI = function(isInitialLoad = false) {
             if(!loggedInEmployee) return;
 
-            // 1. ตรวจสอบค่าจาก Database ก่อนเป็นหลัก ถ้าไม่มี ให้ดึงจาก Local Storage มาใช้
-            let isBotActive = loggedInEmployee.auto_bot_active;
-            if (isBotActive === undefined) {
-                isBotActive = localStorage.getItem(`bot_active_${loggedInEmployee.id}`) === 'true';
-                loggedInEmployee.auto_bot_active = isBotActive;
+            // 1. อ่านค่าจาก LocalStorage ชัวร์สุดสำหรับการใช้งานบนเครื่องเดิม
+            let localActive = localStorage.getItem(`bot_active_${loggedInEmployee.id}`);
+            let isBotActive = false;
+
+            if (localActive !== null) {
+                isBotActive = (localActive === 'true'); // บังคับแปลง String เป็น Boolean ป้องกันบั๊ก
+            } else {
+                // ถ้าไม่มีใน LocalStorage ค่อยดูจาก Database
+                isBotActive = (loggedInEmployee.auto_bot_active === true);
             }
-            
-            let mins = loggedInEmployee.auto_bot_interval || parseInt(localStorage.getItem(`bot_interval_${loggedInEmployee.id}`)) || 15;
+
+            let mins = parseInt(localStorage.getItem(`bot_interval_${loggedInEmployee.id}`));
+            if (isNaN(mins)) mins = loggedInEmployee.auto_bot_interval || 15;
+
+            // อัปเดตตัวแปรใน memory
+            loggedInEmployee.auto_bot_active = isBotActive;
             loggedInEmployee.auto_bot_interval = mins;
 
-            // 2. จัดการหน้าต่าง UI
+            // 2. จัดการหน้าต่าง UI ทันที
             const toggleEl = document.getElementById('toggleAutoBot');
             const statusText = document.getElementById('botStatusText');
             const intervalEl = document.getElementById('autoBotInterval');
-            
-            if (toggleEl) toggleEl.checked = isBotActive;
-            if (intervalEl) intervalEl.value = mins;
 
-            // 3. แสดงข้อความสถานะ และตั้งเวลาบอท
+            // !! สำคัญ: บังคับเซ็ตค่า property 'checked' ให้สวิตซ์ทำงานตรงกับตัวแปรเสมอ !!
+            if (toggleEl) {
+                toggleEl.checked = isBotActive;
+            }
+            if (intervalEl) {
+                intervalEl.value = mins;
+            }
+
+            // 3. จัดการสถานะและการรัน Bot
             if (isBotActive) {
                 if (statusText) statusText.innerHTML = `สถานะ: <span class="text-emerald-600 font-bold">🟢 กำลังเฝ้าระวัง (สแกนทุกๆ ${mins} นาที)</span>`;
                 
@@ -1080,30 +1093,30 @@
         window.toggleAutoBot = async function(isActive) {
             if (!loggedInEmployee) return;
 
-            // ถ้าค่าเหมือนเดิม ไม่ต้องทำอะไรซ้ำ (ป้องกันการกดเบิ้ล หรือบั๊กจาก HTML Label)
-            if (loggedInEmployee.auto_bot_active === isActive) return;
-
             // ตรวจสอบ Token
             if (isActive && (!loggedInEmployee.fb_token || loggedInEmployee.fb_token.trim() === '')) {
-                document.getElementById('toggleAutoBot').checked = false;
+                const toggleEl = document.getElementById('toggleAutoBot');
+                if(toggleEl) toggleEl.checked = false;
                 window.showToast("กรุณาตั้งค่า Token ก่อนเปิดบอท");
                 return;
             }
 
             const mins = parseInt(document.getElementById('autoBotInterval').value) || 15;
 
-            // บันทึกลงตัวแปรและ Local Storage ทันที เพื่อความรวดเร็ว
+            // บันทึกลงตัวแปรและ Local Storage ทันที
             loggedInEmployee.auto_bot_active = isActive;
             loggedInEmployee.auto_bot_interval = mins;
-            localStorage.setItem(`bot_active_${loggedInEmployee.id}`, isActive);
+            localStorage.setItem(`bot_active_${loggedInEmployee.id}`, isActive ? 'true' : 'false');
             localStorage.setItem(`bot_interval_${loggedInEmployee.id}`, mins);
 
-            // รีเซ็ต Timer เดิมทิ้ง และให้ syncBotUI จัดการสร้างใหม่ให้
+            // เคลียร์ Timer เดิมทิ้งเพื่อรีเซ็ต
             if (autoBotTimer) {
                 clearInterval(autoBotTimer);
                 autoBotTimer = null;
             }
-            window.syncBotUI();
+
+            // เรียก syncBotUI เพื่อจัดการ UI และเริ่ม Timer ใหม่
+            window.syncBotUI(false);
 
             // พยายามบันทึกลง Database
             try {
@@ -1113,7 +1126,7 @@
                 });
                 
                 if (isActive) {
-                    window.showToast(`🤖 บอททำงาน! สแกนทุก ${mins} นาที`);
+                    window.showToast(`🤖 บอททำงาน! สแกนทุก ${mins} นาที (โปรดเปิดหน้านี้ทิ้งไว้)`);
                     window.syncData(true).then(() => window.runAutomatedRules(true));
                 } else {
                     window.showToast("ปิดบอทอัตโนมัติแล้ว");
@@ -1127,8 +1140,6 @@
         window.updateBotInterval = async function() {
             if (!loggedInEmployee) return;
             const mins = parseInt(document.getElementById('autoBotInterval').value) || 15;
-            
-            if (loggedInEmployee.auto_bot_interval === mins) return;
             
             loggedInEmployee.auto_bot_interval = mins;
             localStorage.setItem(`bot_interval_${loggedInEmployee.id}`, mins);
