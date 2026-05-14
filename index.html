@@ -410,6 +410,7 @@
                                 <option value="60">สแกนทุกๆ 1 ชั่วโมง</option>
                             </select>
                             <div class="relative inline-block w-14 align-middle select-none transition duration-200 ease-in mt-1">
+                                <!-- เปลี่ยน onchange เป็น pass event เข้าไปเพื่อเช็ค state ได้อย่างแม่นยำ -->
                                 <input type="checkbox" id="toggleAutoBot" onchange="window.toggleAutoBot(this.checked)" class="toggle-checkbox absolute block w-7 h-7 rounded-full bg-white border-4 appearance-none cursor-pointer"/>
                                 <label for="toggleAutoBot" class="toggle-label block overflow-hidden h-7 rounded-full bg-gray-300 cursor-pointer" style="width: 56px;"></label>
                             </div>
@@ -773,7 +774,6 @@
         let globalChartData = [];
         let loggedInEmployee = null; 
 
-        // ระบบโฟลเดอร์สำหรับกฎอัตโนมัติ
         window.ruleFolders = [];
         window.currentFolderId = null;
 
@@ -800,7 +800,10 @@
             updateEmployee: async (id, data) => {
                 try {
                     await updateDoc(doc(db, "employees", id), data);
-                } catch(e) { console.error("Firestore update error:", e); }
+                } catch(e) { 
+                    console.error("Firestore update error:", e); 
+                    throw e; // โยน Error ออกไปให้ระบบแจ้งเตือน
+                }
             }
         };
 
@@ -811,9 +814,6 @@
             return 'id_' + Date.now() + '_' + Math.floor(Math.random() * 1000000);
         }
 
-        // ==========================================
-        // อัปเดตใหม่: ระบบ Auto-Login เมื่อเปิดเว็บใหม่
-        // ==========================================
         document.addEventListener('DOMContentLoaded', async () => {
             try {
                 const savedEmpId = localStorage.getItem('adspro_emp_id');
@@ -826,11 +826,9 @@
                         document.getElementById('appContainer').classList.remove('hidden');
                         window.initDashboardForUser();
                         document.getElementById('globalLoader').classList.add('hidden');
-                        return; // หลุดออกจากฟังก์ชัน ไม่ต้องโชว์หน้า Login
+                        return;
                     }
                 }
-                
-                // ถ้าไม่มีข้อมูลในเครื่อง ให้โชว์หน้าล็อกอินปกติ
                 document.getElementById('globalLoader').classList.add('hidden');
                 if(!loggedInEmployee) {
                     document.getElementById('authScreen').classList.remove('hidden');
@@ -943,8 +941,7 @@
 
                 if(found) {
                     loggedInEmployee = found;
-                    localStorage.setItem('adspro_emp_id', found.id); // บันทึกการล็อกอินลงเครื่อง
-
+                    localStorage.setItem('adspro_emp_id', found.id);
                     window.showToast("เข้าสู่ระบบสำเร็จ!");
                     document.getElementById('authScreen').classList.add('hidden');
                     document.getElementById('appContainer').classList.remove('hidden');
@@ -985,7 +982,7 @@
                 }
 
                 const newId = generateUUID();
-                const newData = { username, pin, orgCode: inviteCode.toUpperCase(), fb_token: '', fb_ad_accounts: [], rule_folders: [], auto_bot_active: false, auto_bot_interval: 15 };
+                const newData = { username, pin, orgCode: inviteCode.toUpperCase(), fb_token: '', fb_ad_accounts: [], rule_folders: [] };
                 await dbService.saveEmployee(newId, newData);
                 
                 window.showToast("สร้างบัญชีส่วนตัวสำเร็จ! กรุณาเข้าสู่ระบบ");
@@ -1002,9 +999,8 @@
         };
 
         window.handleLogout = function() {
-            localStorage.removeItem('adspro_emp_id'); // เคลียร์ล็อกอินออกจากเครื่อง
+            localStorage.removeItem('adspro_emp_id');
             loggedInEmployee = null;
-            
             document.getElementById('appContainer').classList.add('hidden');
             document.getElementById('authScreen').classList.remove('hidden');
             document.getElementById('inpLoginPin').value = '';
@@ -1024,15 +1020,131 @@
                 spendChartInstance.data.datasets[0].data = []; 
                 spendChartInstance.update(); 
             }
-            
-            // ยกเลิกบอทและรีเซ็ต UI
-            if(autoBotTimer) clearInterval(autoBotTimer);
-            autoBotTimer = null;
-            document.getElementById('toggleAutoBot').checked = false;
-            const statusText = document.getElementById('botStatusText');
-            if (statusText) statusText.innerHTML = `สถานะ: <span class="text-gray-500 font-bold">🔴 ปิดการทำงาน</span> (จะรันทุกโฟลเดอร์เมื่อเปิด)`;
-            
+            if(autoBotTimer) {
+                clearInterval(autoBotTimer);
+                autoBotTimer = null;
+            }
             window.showToast("ออกจากระบบแล้ว");
+        };
+
+        let autoBotTimer = null;
+
+        // ฟังก์ชันหัวใจสำคัญ - ทำหน้าที่เชื่อม UI และข้อมูลให้ตรงกัน 100% เสมอ
+        window.syncBotUI = function(isInitialLoad = false) {
+            if(!loggedInEmployee) return;
+
+            // 1. ตรวจสอบค่าจาก Database ก่อนเป็นหลัก ถ้าไม่มี ให้ดึงจาก Local Storage มาใช้
+            let isBotActive = loggedInEmployee.auto_bot_active;
+            if (isBotActive === undefined) {
+                isBotActive = localStorage.getItem(`bot_active_${loggedInEmployee.id}`) === 'true';
+                loggedInEmployee.auto_bot_active = isBotActive;
+            }
+            
+            let mins = loggedInEmployee.auto_bot_interval || parseInt(localStorage.getItem(`bot_interval_${loggedInEmployee.id}`)) || 15;
+            loggedInEmployee.auto_bot_interval = mins;
+
+            // 2. จัดการหน้าต่าง UI
+            const toggleEl = document.getElementById('toggleAutoBot');
+            const statusText = document.getElementById('botStatusText');
+            const intervalEl = document.getElementById('autoBotInterval');
+            
+            if (toggleEl) toggleEl.checked = isBotActive;
+            if (intervalEl) intervalEl.value = mins;
+
+            // 3. แสดงข้อความสถานะ และตั้งเวลาบอท
+            if (isBotActive) {
+                if (statusText) statusText.innerHTML = `สถานะ: <span class="text-emerald-600 font-bold">🟢 กำลังเฝ้าระวัง (สแกนทุกๆ ${mins} นาที)</span>`;
+                
+                if (!autoBotTimer) {
+                    // ถ้ารันครั้งแรก (โหลดเว็บใหม่) ให้รอ 2 วิก่อนค่อยรันกฎ จะได้รอแคมเปญโหลดเสร็จ
+                    if (isInitialLoad && loggedInEmployee.fb_token) {
+                        setTimeout(() => {
+                            window.syncData(true).then(() => window.runAutomatedRules(true));
+                        }, 2000);
+                    }
+                    
+                    autoBotTimer = setInterval(async () => {
+                        await window.syncData(true);
+                        await window.runAutomatedRules(true);
+                    }, mins * 60 * 1000);
+                }
+            } else {
+                if (statusText) statusText.innerHTML = `สถานะ: <span class="text-gray-500 font-bold">🔴 ปิดการทำงาน</span> (จะรันทุกโฟลเดอร์เมื่อเปิด)`;
+                if (autoBotTimer) {
+                    clearInterval(autoBotTimer);
+                    autoBotTimer = null;
+                }
+            }
+        };
+
+        window.toggleAutoBot = async function(isActive) {
+            if (!loggedInEmployee) return;
+
+            // ถ้าค่าเหมือนเดิม ไม่ต้องทำอะไรซ้ำ (ป้องกันการกดเบิ้ล หรือบั๊กจาก HTML Label)
+            if (loggedInEmployee.auto_bot_active === isActive) return;
+
+            // ตรวจสอบ Token
+            if (isActive && (!loggedInEmployee.fb_token || loggedInEmployee.fb_token.trim() === '')) {
+                document.getElementById('toggleAutoBot').checked = false;
+                window.showToast("กรุณาตั้งค่า Token ก่อนเปิดบอท");
+                return;
+            }
+
+            const mins = parseInt(document.getElementById('autoBotInterval').value) || 15;
+
+            // บันทึกลงตัวแปรและ Local Storage ทันที เพื่อความรวดเร็ว
+            loggedInEmployee.auto_bot_active = isActive;
+            loggedInEmployee.auto_bot_interval = mins;
+            localStorage.setItem(`bot_active_${loggedInEmployee.id}`, isActive);
+            localStorage.setItem(`bot_interval_${loggedInEmployee.id}`, mins);
+
+            // รีเซ็ต Timer เดิมทิ้ง และให้ syncBotUI จัดการสร้างใหม่ให้
+            if (autoBotTimer) {
+                clearInterval(autoBotTimer);
+                autoBotTimer = null;
+            }
+            window.syncBotUI();
+
+            // พยายามบันทึกลง Database
+            try {
+                await dbService.updateEmployee(loggedInEmployee.id, { 
+                    auto_bot_active: isActive,
+                    auto_bot_interval: mins 
+                });
+                
+                if (isActive) {
+                    window.showToast(`🤖 บอททำงาน! สแกนทุก ${mins} นาที`);
+                    window.syncData(true).then(() => window.runAutomatedRules(true));
+                } else {
+                    window.showToast("ปิดบอทอัตโนมัติแล้ว");
+                }
+            } catch(e) {
+                console.error("Firebase save error:", e);
+                window.showToast("⚠️ ไม่สามารถบันทึกสถานะลงระบบ Cloud ได้ แต่บอทจะทำงานในรอบนี้");
+            }
+        };
+
+        window.updateBotInterval = async function() {
+            if (!loggedInEmployee) return;
+            const mins = parseInt(document.getElementById('autoBotInterval').value) || 15;
+            
+            if (loggedInEmployee.auto_bot_interval === mins) return;
+            
+            loggedInEmployee.auto_bot_interval = mins;
+            localStorage.setItem(`bot_interval_${loggedInEmployee.id}`, mins);
+            
+            if (autoBotTimer) {
+                clearInterval(autoBotTimer);
+                autoBotTimer = null;
+            }
+            window.syncBotUI(); // ปลุกระบบบอทใหม่ด้วยเวลาใหม่
+
+            try {
+                await dbService.updateEmployee(loggedInEmployee.id, { auto_bot_interval: mins });
+                window.showToast(`บันทึกเวลาสแกนเป็น ${mins} นาที`);
+            } catch(e) {
+                console.error(e);
+            }
         };
 
         window.initDashboardForUser = function() {
@@ -1069,31 +1181,14 @@
             window.renderFolderTabs();
             window.renderFolderContent();
 
-            if (loggedInEmployee.auto_bot_interval) {
-                document.getElementById('autoBotInterval').value = loggedInEmployee.auto_bot_interval;
-            } else {
-                document.getElementById('autoBotInterval').value = "15";
-            }
-
-            // ==========================================
-            // อัปเดตใหม่: บังคับการแสดงผลและรันบอทต่อทันที
-            // ==========================================
-            const isBotActive = loggedInEmployee.auto_bot_active === true;
-            document.getElementById('toggleAutoBot').checked = isBotActive;
-            if (isBotActive) {
-                window.toggleAutoBot(true, true); // (เปิดสถานะ, ข้ามการบันทึกซ้ำ)
-            } else {
-                document.getElementById('toggleAutoBot').checked = false;
-            }
+            // 🚀 เรียกใช้งานตัว Sync สวิตซ์กับฐานข้อมูลเมื่อโหลด Dashboard
+            window.syncBotUI(true);
 
             const ctx = document.getElementById('spendChart').getContext('2d');
             if(spendChartInstance) spendChartInstance.destroy(); 
             spendChartInstance = new Chart(ctx, {
                 type: 'bar',
-                data: {
-                    labels: [],
-                    datasets: [{ label: 'Spend (฿)', data: [], backgroundColor: [], borderRadius: 4 }]
-                },
+                data: { labels: [], datasets: [{ label: 'Spend (฿)', data: [], backgroundColor: [], borderRadius: 4 }] },
                 options: {
                     responsive: true, maintainAspectRatio: false,
                     plugins: { 
@@ -1147,12 +1242,9 @@
             activeNav.classList.replace('text-gray-700', 'text-fb-blue');
             document.getElementById('scrollableArea').scrollTop = 0;
 
-            // ==========================================
-            // อัปเดตใหม่: บังคับ UI ของสวิตซ์ทุกครั้งที่เข้าหน้ากฎ
-            // ==========================================
-            if (tabId === 'rules' && loggedInEmployee) {
-                const isBotActive = (loggedInEmployee.auto_bot_active === true);
-                document.getElementById('toggleAutoBot').checked = isBotActive;
+            // 🚀 เรียกเช็คและซิงค์สวิตซ์เสมอเมื่อเปิดแท็บกฎอัตโนมัติ
+            if (tabId === 'rules') {
+                window.syncBotUI(false);
             }
         };
 
@@ -1957,12 +2049,7 @@
         window.addFolder = function() {
             window.readRulesFromDOM();
             const newId = generateUUID();
-            window.ruleFolders.push({
-                id: newId,
-                name: 'โฟลเดอร์ใหม่',
-                keyword: '',
-                rules: []
-            });
+            window.ruleFolders.push({ id: newId, name: 'โฟลเดอร์ใหม่', keyword: '', rules: [] });
             window.currentFolderId = newId;
             window.renderFolderTabs();
             window.renderFolderContent();
@@ -2343,84 +2430,6 @@
             }
         };
 
-        let autoBotTimer = null;
-
-        // ==========================================
-        // อัปเดตใหม่: ฟังก์ชันบันทึกและโชว์ปุ่มตรงเป๊ะ 100%
-        // ==========================================
-        window.toggleAutoBot = async function(isActive, skipSave = false) {
-            const statusText = document.getElementById('botStatusText');
-            const toggleEl = document.getElementById('toggleAutoBot');
-            
-            // บังคับให้ปุ่มสวิตซ์ (UI) ตรงกับความจริงเสมอ
-            if(toggleEl.checked !== isActive) {
-                toggleEl.checked = isActive;
-            }
-
-            if (isActive) {
-                if(!loggedInEmployee || !loggedInEmployee.fb_token) {
-                    toggleEl.checked = false;
-                    if(!skipSave) window.showToast("กรุณาตั้งค่า Token ก่อนเปิดบอท");
-                    return;
-                }
-                const mins = parseInt(document.getElementById('autoBotInterval').value);
-                statusText.innerHTML = `สถานะ: <span class="text-emerald-600 font-bold">🟢 กำลังเฝ้าระวัง (สแกนทุกๆ ${mins} นาที)</span>`;
-                
-                if(autoBotTimer) clearInterval(autoBotTimer);
-                
-                // ไม่ต้องแสดง toast ถ้ามันเปิดออโต้ตอนเริ่มเว็บ
-                if(!skipSave) {
-                    window.syncData(true).then(() => window.runAutomatedRules(true));
-                    window.showToast(`🤖 บอทเริ่มทำงาน จะสแกนทุก ${mins} นาที (โปรดเปิดหน้านี้ทิ้งไว้)`);
-                } else {
-                    // แอบรันเงียบๆ ถ้าเป็นการออโต้รีสตาร์ท
-                    window.syncData(true).then(() => window.runAutomatedRules(true));
-                }
-
-                autoBotTimer = setInterval(async () => {
-                    await window.syncData(true);
-                    await window.runAutomatedRules(true);
-                }, mins * 60 * 1000);
-                
-            } else {
-                statusText.innerHTML = `สถานะ: <span class="text-gray-500 font-bold">🔴 ปิดการทำงาน</span> (จะรันทุกโฟลเดอร์เมื่อเปิด)`;
-                if(autoBotTimer) clearInterval(autoBotTimer);
-                autoBotTimer = null;
-                if(!skipSave) window.showToast("ปิดการทำงานบอทอัตโนมัติแล้ว");
-            }
-
-            // บันทึกสถานะบอทลง Database ทุกครั้งที่ผู้ใช้กดคลิกเอง
-            if (!skipSave && loggedInEmployee) {
-                const mins = parseInt(document.getElementById('autoBotInterval').value);
-                loggedInEmployee.auto_bot_active = isActive;
-                loggedInEmployee.auto_bot_interval = mins;
-                try {
-                    await dbService.updateEmployee(loggedInEmployee.id, { 
-                        auto_bot_active: isActive,
-                        auto_bot_interval: mins
-                    });
-                } catch(e) {
-                    console.error("Save Bot State error: ", e);
-                }
-            }
-        };
-
-        window.updateBotInterval = async function() {
-            const toggle = document.getElementById('toggleAutoBot');
-            const mins = parseInt(document.getElementById('autoBotInterval').value);
-            
-            if (loggedInEmployee) {
-                loggedInEmployee.auto_bot_interval = mins;
-                try {
-                    await dbService.updateEmployee(loggedInEmployee.id, { auto_bot_interval: mins });
-                } catch(e) {}
-            }
-
-            if (toggle.checked) {
-                window.toggleAutoBot(true, true);
-            }
-        };
-
         window.saveRules = async function(btn) {
             if(!loggedInEmployee) return window.showToast("กรุณาเข้าสู่ระบบก่อน");
             
@@ -2488,7 +2497,6 @@
             }
 
             const budgetPerPage = totalBudget / totalPages;
-            
             let campsPerPage = 1;
 
             if (strategy === 'ant_army') {
