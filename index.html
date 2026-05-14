@@ -7,7 +7,6 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <!-- ใช้ฟอนต์ Noto Sans Thai -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
@@ -52,7 +51,6 @@
 </head>
 <body class="flex h-screen overflow-hidden">
 
-    <!-- GLOBAL LOADING -->
     <div id="globalLoader" class="fixed inset-0 bg-white z-[200] flex flex-col items-center justify-center transition-opacity duration-300">
         <i class="fa-solid fa-spinner fa-spin text-fb-blue text-5xl mb-4"></i>
         <h2 class="text-xl font-bold text-gray-800 mt-2">กำลังโหลดระบบ...</h2>
@@ -972,7 +970,6 @@
                 }
 
                 const newId = generateUUID();
-                // เพิ่มฟิลด์ auto_bot_active และ auto_bot_interval
                 const newData = { username, pin, orgCode: inviteCode.toUpperCase(), fb_token: '', fb_ad_accounts: [], rule_folders: [], auto_bot_active: false, auto_bot_interval: 15 };
                 await dbService.saveEmployee(newId, newData);
                 
@@ -990,6 +987,17 @@
         };
 
         window.handleLogout = function() {
+            // เคลียร์ Timer ของ Bot แต่ไม่เปลี่ยนสถานะใน Database
+            if(autoBotTimer) {
+                clearInterval(autoBotTimer);
+                autoBotTimer = null;
+            }
+            
+            // รีเซ็ตหน้าต่างสวิตซ์กลับเป็นปิด (แค่เพื่อการแสดงผลเบื้องต้นของหน้าจอตอนที่ไม่มี User)
+            document.getElementById('toggleAutoBot').checked = false;
+            const statusText = document.getElementById('botStatusText');
+            if (statusText) statusText.innerHTML = `สถานะ: <span class="text-gray-500 font-bold">🔴 ปิดการทำงาน</span> (จะรันทุกโฟลเดอร์เมื่อเปิด)`;
+
             loggedInEmployee = null;
             document.getElementById('appContainer').classList.add('hidden');
             document.getElementById('authScreen').classList.remove('hidden');
@@ -1010,7 +1018,7 @@
                 spendChartInstance.data.datasets[0].data = []; 
                 spendChartInstance.update(); 
             }
-            if(autoBotTimer) window.toggleAutoBot(false);
+            
             window.showToast("ออกจากระบบแล้ว");
         };
 
@@ -1034,17 +1042,11 @@
             if (loggedInEmployee.rule_folders.length === 0) {
                 if (loggedInEmployee.saved_rules && loggedInEmployee.saved_rules.length > 0) {
                     loggedInEmployee.rule_folders.push({
-                        id: generateUUID(),
-                        name: 'โฟลเดอร์เริ่มต้น',
-                        keyword: '',
-                        rules: loggedInEmployee.saved_rules
+                        id: generateUUID(), name: 'โฟลเดอร์เริ่มต้น', keyword: '', rules: loggedInEmployee.saved_rules
                     });
                 } else {
                     loggedInEmployee.rule_folders.push({
-                        id: generateUUID(),
-                        name: 'แคมเปญทั่วไป',
-                        keyword: '',
-                        rules: []
+                        id: generateUUID(), name: 'แคมเปญทั่วไป', keyword: '', rules: []
                     });
                 }
             }
@@ -1054,16 +1056,19 @@
             window.renderFolderTabs();
             window.renderFolderContent();
 
-            // จัดการเปิด-ปิดบอทอัตโนมัติเมื่อเข้ามาใหม่
+            // ดึงค่า Auto-bot จาก Database เพื่อ Persistence ข้าม Session
             if (loggedInEmployee.auto_bot_interval) {
                 document.getElementById('autoBotInterval').value = loggedInEmployee.auto_bot_interval;
+            } else {
+                document.getElementById('autoBotInterval').value = "15"; // default
             }
+
             if (loggedInEmployee.auto_bot_active) {
                 document.getElementById('toggleAutoBot').checked = true;
-                window.toggleAutoBot(true);
+                // สั่งเปิด Auto-bot โดยไม่ต้องโชว์ Toast ย้ำว่าเปิดใหม่ และไม่ต้อง Save ซ้ำ (skipSave=true)
+                window.toggleAutoBot(true, true); 
             } else {
                 document.getElementById('toggleAutoBot').checked = false;
-                window.toggleAutoBot(false);
             }
 
             const ctx = document.getElementById('spendChart').getContext('2d');
@@ -1450,10 +1455,10 @@
                         
                         camp.spendNum = spendNum;
                         camp.purchases = purchases;
+                        camp.msgsNum = msgs;
                         camp.roasNum = roas;
                         camp.costPurNum = costPur;
                         camp.costMsgNum = costMsg;
-                        camp.msgsNum = msgs; // บันทึก msgsNum ไว้ใช้ในฝั่ง Auto-Bot
                         camp.ctrNum = ctr;
                         camp.cpmNum = cpm;
                         
@@ -1987,11 +1992,12 @@
             let conditionsHtml = '';
             if(ruleData && ruleData.conditions && ruleData.conditions.length > 0) {
                 ruleData.conditions.forEach((cond, idx) => {
+                    const logicOp = cond.logic || 'and';
                     const andHtml = idx > 0 ? `
                         <div class="pl-4 border-l-2 border-gray-300 ml-4 py-1 mb-3 condition-separator">
                             <select class="logic-operator text-xs font-bold text-gray-700 bg-gray-100 border border-gray-300 rounded px-2 py-1 outline-none">
-                                <option value="and" ${cond.logic === 'or' ? '' : 'selected'}>และ (AND)</option>
-                                <option value="or" ${cond.logic === 'or' ? 'selected' : ''}>หรือ (OR)</option>
+                                <option value="and" ${logicOp === 'and' ? 'selected' : ''}>และ (AND)</option>
+                                <option value="or" ${logicOp === 'or' ? 'selected' : ''}>หรือ (OR)</option>
                             </select>
                         </div>` : '';
                     conditionsHtml += `
@@ -2100,10 +2106,8 @@
 
         window.removeCondition = function(btn) {
             const row = btn.closest('.condition-row');
-            if (row) row.remove();
-            
-            // ลบตัวเชื่อมของรายการแรกที่เหลืออยู่ทิ้ง (ถ้ามันกลายเป็นรายการแรก)
             const container = btn.closest('.conditions-container');
+            if (row) row.remove();
             if (container && container.firstElementChild) {
                 const separator = container.firstElementChild.querySelector('.condition-separator');
                 if (separator) separator.remove();
@@ -2115,7 +2119,6 @@
             const container = ruleCard.querySelector('.conditions-container');
             const div = document.createElement('div');
             div.className = 'condition-row w-full mt-3';
-            
             const andHtml = container.children.length > 0 ? `
                 <div class="pl-4 border-l-2 border-gray-300 ml-4 py-1 mb-3 condition-separator">
                     <select class="logic-operator text-xs font-bold text-gray-700 bg-gray-100 border border-gray-300 rounded px-2 py-1 outline-none">
@@ -2123,7 +2126,6 @@
                         <option value="or">หรือ (OR)</option>
                     </select>
                 </div>` : '';
-                
             div.innerHTML = `
                 ${andHtml}
                 <div class="condition-item flex items-center gap-3 w-full">
@@ -2173,7 +2175,7 @@
                     const logic = logicSelect ? logicSelect.value : 'and';
                     
                     const item = row.querySelector('.condition-item');
-                    if (item) {
+                    if(item) {
                         const selects = item.querySelectorAll('select');
                         const valInput = item.querySelector('input[type="number"]');
                         if(selects.length >= 2 && valInput && valInput.value !== '') {
@@ -2186,6 +2188,17 @@
                         }
                     }
                 });
+
+                // รองรับโค้ดเก่าในกรณีที่โหลดเงื่อนไขเดิมค้างไว้และเป็น class เก่า
+                if (conditions.length === 0) {
+                    card.querySelectorAll('.condition-item').forEach(item => {
+                        const selects = item.querySelectorAll('select');
+                        const valInput = item.querySelector('input[type="number"]');
+                        if(selects.length >= 2 && valInput && valInput.value !== '') {
+                            conditions.push({ logic: 'and', metric: selects[0].value, operator: selects[1].value, value: parseFloat(valInput.value) });
+                        }
+                    });
+                }
 
                 if(name && conditions.length > 0) {
                     rules.push({ name, action, actionVal, conditions });
@@ -2235,7 +2248,7 @@
                         if (action === 'pause' && camp.status !== 'ACTIVE') continue;
 
                         let ruleResult = null;
-                        
+
                         rule.conditions.forEach((cond, idx) => {
                             const metric = cond.metric;
                             const operator = cond.operator;
@@ -2258,8 +2271,11 @@
                             if (idx === 0) {
                                 ruleResult = isCondTrue;
                             } else {
-                                if (cond.logic === 'and') ruleResult = ruleResult && isCondTrue;
-                                if (cond.logic === 'or') ruleResult = ruleResult || isCondTrue;
+                                if (cond.logic === 'or') {
+                                    ruleResult = ruleResult || isCondTrue;
+                                } else {
+                                    ruleResult = ruleResult && isCondTrue;
+                                }
                             }
                         });
 
@@ -2308,7 +2324,7 @@
 
         let autoBotTimer = null;
 
-        window.toggleAutoBot = function(isActive) {
+        window.toggleAutoBot = async function(isActive, skipSave = false) {
             const statusText = document.getElementById('botStatusText');
             if (isActive) {
                 if(!loggedInEmployee || !loggedInEmployee.fb_token) {
@@ -2318,11 +2334,6 @@
                 const mins = parseInt(document.getElementById('autoBotInterval').value);
                 statusText.innerHTML = `สถานะ: <span class="text-emerald-600 font-bold">🟢 กำลังเฝ้าระวัง (สแกนทุกๆ ${mins} นาที)</span>`;
                 
-                // อัปเดตสถานะลง DB
-                dbService.updateEmployee(loggedInEmployee.id, { auto_bot_active: true, auto_bot_interval: mins });
-                loggedInEmployee.auto_bot_active = true;
-                loggedInEmployee.auto_bot_interval = mins;
-
                 if(autoBotTimer) clearInterval(autoBotTimer);
                 
                 window.syncData(true).then(() => window.runAutomatedRules(true));
@@ -2332,30 +2343,45 @@
                     await window.runAutomatedRules(true);
                 }, mins * 60 * 1000);
                 
-                window.showToast(`🤖 บอทเริ่มทำงาน จะสแกนทุก ${mins} นาที (โปรดเปิดหน้านี้ทิ้งไว้)`);
+                if(!skipSave) window.showToast(`🤖 บอทเริ่มทำงาน จะสแกนทุก ${mins} นาที (โปรดเปิดหน้านี้ทิ้งไว้)`);
             } else {
                 statusText.innerHTML = `สถานะ: <span class="text-gray-500 font-bold">🔴 ปิดการทำงาน</span> (จะรันทุกโฟลเดอร์เมื่อเปิด)`;
                 if(autoBotTimer) clearInterval(autoBotTimer);
                 autoBotTimer = null;
-                
-                // อัปเดตสถานะลง DB
-                dbService.updateEmployee(loggedInEmployee.id, { auto_bot_active: false });
-                loggedInEmployee.auto_bot_active = false;
+                if(!skipSave) window.showToast("ปิดการทำงานบอทอัตโนมัติแล้ว");
+            }
 
-                window.showToast("ปิดการทำงานบอทอัตโนมัติแล้ว");
+            // บันทึกสถานะบอทลง Firebase ถ้าไม่ต้องข้ามการบันทึก (skipSave)
+            if (!skipSave && loggedInEmployee) {
+                const mins = parseInt(document.getElementById('autoBotInterval').value);
+                loggedInEmployee.auto_bot_active = isActive;
+                loggedInEmployee.auto_bot_interval = mins;
+                try {
+                    await dbService.updateEmployee(loggedInEmployee.id, { 
+                        auto_bot_active: isActive,
+                        auto_bot_interval: mins
+                    });
+                } catch(e) {
+                    console.error("Save Bot State error: ", e);
+                }
             }
         };
 
-        window.updateBotInterval = function() {
+        window.updateBotInterval = async function() {
             const toggle = document.getElementById('toggleAutoBot');
             const mins = parseInt(document.getElementById('autoBotInterval').value);
             
-            if (toggle.checked) {
-                window.toggleAutoBot(true);
-            } else {
-                // บันทึกเฉพาะ Interval ถ้าบอทยังไม่ได้เปิด
-                dbService.updateEmployee(loggedInEmployee.id, { auto_bot_interval: mins });
+            // อัปเดตเวลาลง Database ทันที
+            if (loggedInEmployee) {
                 loggedInEmployee.auto_bot_interval = mins;
+                try {
+                    await dbService.updateEmployee(loggedInEmployee.id, { auto_bot_interval: mins });
+                } catch(e) {}
+            }
+
+            if (toggle.checked) {
+                // ข้ามการแจ้งเตือนและการบันทึกฐานข้อมูลซ้ำซ้อน
+                window.toggleAutoBot(true, true);
             }
         };
 
