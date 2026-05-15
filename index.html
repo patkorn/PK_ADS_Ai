@@ -2147,6 +2147,7 @@
             const name = ruleData ? ruleData.name : '';
             const action = ruleData ? ruleData.action : 'pause';
             const actionVal = ruleData ? ruleData.actionVal : '';
+            const actionFreq = ruleData && ruleData.actionFreq ? ruleData.actionFreq : 24;
             
             let conditionsHtml = '';
             const renderCond = (cond, idx) => {
@@ -2184,7 +2185,7 @@
                             <select class="operator-select w-24 border border-gray-300 rounded-md p-2 outline-none text-sm font-bold text-gray-700">
                                 <option value=">" ${cond.operator === '>' ? 'selected' : ''}>มากกว่า (>)</option>
                                 <option value="<" ${cond.operator === '<' ? 'selected' : ''}>น้อยกว่า (<)</option>
-                                <option value="=" ${cond.operator === '=' ? 'selected' : ''}>เท่ากับ (=)</option>
+                                <option value="==" ${cond.operator === '==' ? 'selected' : ''}>เท่ากับ (==)</option>
                             </select>
                             <input type="number" value="${cond.value !== undefined ? cond.value : ''}" placeholder="ระบุค่า" class="val-input w-24 border border-gray-300 rounded-md p-2 outline-none text-sm text-center font-bold">
                             <button onclick="window.removeCondition(this)" class="text-red-400 hover:text-white hover:bg-red-500 w-8 h-8 rounded-md shrink-0 transition flex items-center justify-center border border-red-200 bg-white"><i class="fa-solid fa-trash"></i></button>
@@ -2217,9 +2218,14 @@
                             <option value="dec_budget" ${action === 'dec_budget' ? 'selected' : ''}>ลดงบประมาณ (%)</option>
                             <option value="reset_budget" ${action === 'reset_budget' ? 'selected' : ''}>รีเซ็ตงบประมาณ</option>
                         </select>
-                        <div class="action-value-box ${(action === 'inc_budget' || action === 'dec_budget') ? 'flex' : 'hidden'} gap-2 items-center">
+                        <div class="action-value-box ${(action === 'inc_budget' || action === 'dec_budget') ? 'flex' : 'hidden'} gap-2 items-center flex-wrap">
                             <input type="number" value="${actionVal}" placeholder="20" class="action-value-input w-20 border border-gray-300 rounded-lg p-2.5 text-center">
                             <span class="font-bold text-gray-600">%</span>
+                            <div class="pl-3 ml-2 border-l-2 border-indigo-200 flex gap-2 items-center">
+                                <span class="text-xs font-bold text-gray-600">ทำซ้ำทุกๆ</span>
+                                <input type="number" value="${actionFreq}" placeholder="24" class="action-freq-input w-16 border border-gray-300 rounded-lg p-2 text-center shadow-sm" title="ระยะเวลาหน่วงก่อนปรับงบครั้งถัดไป">
+                                <span class="text-xs font-bold text-gray-600">ชม.</span>
+                            </div>
                         </div>
                         <div class="action-reset-box ${action === 'reset_budget' ? 'flex' : 'hidden'} gap-2 items-center">
                             <span class="font-bold text-gray-600" data-i18n="lblTo">เป็น</span>
@@ -2322,13 +2328,20 @@
                 const nameInput = card.querySelector('.rule-name-input');
                 const actionSelect = card.querySelector('.action-select');
                 const actionValInput = card.querySelector('.action-value-input');
+                const actionFreqInput = card.querySelector('.action-freq-input');
                 const actionResetInput = card.querySelector('.action-reset-input');
                 
                 const name = nameInput ? nameInput.value : '';
                 const action = actionSelect ? actionSelect.value : 'pause';
                 let actionVal = '';
-                if(action === 'inc_budget' || action === 'dec_budget') actionVal = actionValInput ? actionValInput.value : '';
-                else if(action === 'reset_budget') actionVal = actionResetInput ? actionResetInput.value : '';
+                let actionFreq = 24;
+                if(action === 'inc_budget' || action === 'dec_budget') {
+                    actionVal = actionValInput ? actionValInput.value : '';
+                    actionFreq = actionFreqInput ? parseFloat(actionFreqInput.value) || 24 : 24;
+                }
+                else if(action === 'reset_budget') {
+                    actionVal = actionResetInput ? actionResetInput.value : '';
+                }
                 
                 const conditions = [];
                 card.querySelectorAll('.condition-row').forEach(row => {
@@ -2354,7 +2367,7 @@
                 });
 
                 if(name && conditions.length > 0) {
-                    rules.push({ name, action, actionVal, conditions });
+                    rules.push({ name, action, actionVal, actionFreq, conditions });
                 }
             });
 
@@ -2394,7 +2407,8 @@
 
                 if (targetCampaigns.length === 0) continue;
 
-                for (let rule of folder.rules) {
+                for (let ruleIdx = 0; ruleIdx < folder.rules.length; ruleIdx++) {
+                    let rule = folder.rules[ruleIdx];
                     const action = rule.action;
                     if (!rule.conditions || rule.conditions.length === 0) continue;
 
@@ -2466,32 +2480,55 @@
 
                         // Apply action if rule passes
                         if (ruleResult) {
-                            triggeredCount++;
-                            if (action === 'activate') {
-                                await window.toggleRealCampaign(camp.id, true);
-                            } else if (action === 'pause') {
-                                await window.toggleRealCampaign(camp.id, false);
-                            } else if (action === 'inc_budget' || action === 'dec_budget' || action === 'reset_budget') {
-                                let currentBudget = parseFloat(camp.daily_budget) || 0;
-                                if (currentBudget > 0) {
-                                    let newBudget = currentBudget;
-                                    if (action === 'inc_budget') {
-                                        const pct = parseFloat(rule.actionVal) || 0;
-                                        newBudget = currentBudget + (currentBudget * (pct / 100));
-                                    } else if (action === 'dec_budget') {
-                                        const pct = parseFloat(rule.actionVal) || 0;
-                                        newBudget = currentBudget - (currentBudget * (pct / 100));
-                                    } else if (action === 'reset_budget') {
-                                        const targetVal = parseFloat(rule.actionVal) || 0;
-                                        newBudget = targetVal * 100; // Facebook API requires budget in cents (e.g., THB * 100)
+                            let canExecute = true;
+
+                            // Check cooldown for budget rules
+                            if (action === 'inc_budget' || action === 'dec_budget') {
+                                const freqHours = parseFloat(rule.actionFreq) || 24;
+                                const cacheKey = `last_exec_${folder.id}_${ruleIdx}_${camp.id}`;
+                                const lastExec = localStorage.getItem(cacheKey);
+                                
+                                if (lastExec) {
+                                    const elapsedMs = Date.now() - parseInt(lastExec);
+                                    if (elapsedMs < (freqHours * 3600 * 1000)) {
+                                        canExecute = false;
                                     }
-                                    
-                                    if (Math.floor(newBudget) !== Math.floor(currentBudget)) {
-                                        await fetch(`https://graph.facebook.com/v21.0/${camp.id}?access_token=${loggedInEmployee.fb_token}`, {
-                                            method: 'POST',
-                                            headers: { 'Content-Type': 'application/json' },
-                                            body: JSON.stringify({ daily_budget: Math.floor(newBudget) })
-                                        });
+                                }
+                            }
+
+                            if (canExecute) {
+                                triggeredCount++;
+                                if (action === 'activate') {
+                                    await window.toggleRealCampaign(camp.id, true);
+                                } else if (action === 'pause') {
+                                    await window.toggleRealCampaign(camp.id, false);
+                                } else if (action === 'inc_budget' || action === 'dec_budget' || action === 'reset_budget') {
+                                    let currentBudget = parseFloat(camp.daily_budget) || 0;
+                                    if (currentBudget > 0) {
+                                        let newBudget = currentBudget;
+                                        if (action === 'inc_budget') {
+                                            const pct = parseFloat(rule.actionVal) || 0;
+                                            newBudget = currentBudget + (currentBudget * (pct / 100));
+                                        } else if (action === 'dec_budget') {
+                                            const pct = parseFloat(rule.actionVal) || 0;
+                                            newBudget = currentBudget - (currentBudget * (pct / 100));
+                                        } else if (action === 'reset_budget') {
+                                            const targetVal = parseFloat(rule.actionVal) || 0;
+                                            newBudget = targetVal * 100; // Facebook API requires budget in cents (e.g., THB * 100)
+                                        }
+                                        
+                                        if (Math.floor(newBudget) !== Math.floor(currentBudget)) {
+                                            await fetch(`https://graph.facebook.com/v21.0/${camp.id}?access_token=${loggedInEmployee.fb_token}`, {
+                                                method: 'POST',
+                                                headers: { 'Content-Type': 'application/json' },
+                                                body: JSON.stringify({ daily_budget: Math.floor(newBudget) })
+                                            });
+
+                                            if (action === 'inc_budget' || action === 'dec_budget') {
+                                                const cacheKey = `last_exec_${folder.id}_${ruleIdx}_${camp.id}`;
+                                                localStorage.setItem(cacheKey, Date.now().toString());
+                                            }
+                                        }
                                     }
                                 }
                             }
