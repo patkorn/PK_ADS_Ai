@@ -838,7 +838,6 @@
             return 'id_' + Date.now() + '_' + Math.floor(Math.random() * 1000000);
         }
 
-        // --- ฟังก์ชันที่ขาดหายไปสำหรับการจัดการ Ad Account ---
         window.addAdAccountInput = function(value = '') {
             const container = document.getElementById('adAccountsContainer');
             const div = document.createElement('div');
@@ -893,7 +892,6 @@
             accountInputs.forEach(input => {
                 const val = input.value.trim();
                 if (val) {
-                    // สร้าง Format act_ ให้อัตโนมัติถ้าไม่ได้ใส่มา
                     const formattedVal = val.startsWith('act_') ? val : 'act_' + val;
                     if(!accounts.includes(formattedVal)) accounts.push(formattedVal);
                 }
@@ -908,7 +906,6 @@
             btn.disabled = true;
 
             try {
-                // บันทึกข้อมูลลง Firestore
                 loggedInEmployee.fb_token = token;
                 loggedInEmployee.fb_ad_accounts = accounts;
 
@@ -920,7 +917,6 @@
                 window.updateAdAccountDropdown();
                 window.showToast("บันทึกข้อมูลการเชื่อมต่อสำเร็จ!");
                 
-                // สั่งให้ดึงข้อมูลใหม่ทันที
                 setTimeout(() => {
                     window.syncData();
                 }, 1000);
@@ -933,11 +929,9 @@
                 btn.disabled = false;
             }
         };
-        // -------------------------------------------------------------
 
         document.addEventListener('DOMContentLoaded', async () => {
             try {
-                // Auto-Login: เช็ค LocalStorage ทันทีที่โหลด
                 const savedEmpId = localStorage.getItem('adspro_emp_id');
                 if (savedEmpId) {
                     const employees = await dbService.getEmployees();
@@ -952,7 +946,6 @@
                     }
                 }
                 
-                // ถ้าไม่มีใน LocalStorage ก็โชว์หน้า Login ปกติ
                 document.getElementById('globalLoader').classList.add('hidden');
                 if(!loggedInEmployee) {
                     document.getElementById('authScreen').classList.remove('hidden');
@@ -2386,6 +2379,36 @@
             }
         };
 
+        // ====== ฟังก์ชันที่เพิ่มใหม่เพื่อให้ปุ่ม บันทึกกฎทั้งหมดลง Cloud ทำงานได้ ====== //
+        window.saveRules = async function(btn) {
+            if(!loggedInEmployee) return window.showToast("กรุณาเข้าสู่ระบบก่อนบันทึกข้อมูล");
+            
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i> กำลังบันทึกข้อมูลลง Cloud...';
+            btn.disabled = true;
+
+            try {
+                // อัปเดตข้อมูลจาก UI กลับเข้า Object
+                window.readRulesFromDOM(); 
+                
+                // อัปเดตข้อมูลใน Employee ปัจจุบัน
+                loggedInEmployee.rule_folders = window.ruleFolders;
+                
+                // สั่งบันทึกเข้า Firebase
+                await dbService.updateEmployee(loggedInEmployee.id, {
+                    rule_folders: window.ruleFolders
+                });
+                
+                window.showToast("บันทึกกฎทั้งหมดลง Cloud สำเร็จ!");
+            } catch (e) {
+                console.error("Save Rules Error: ", e);
+                window.showToast("เกิดข้อผิดพลาดในการบันทึกข้อมูล");
+            } finally {
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            }
+        };
+
         window.runAutomatedRules = async function(silent = false) {
             if (!globalCampaignsData || globalCampaignsData.length === 0) {
                 if(!silent) window.showToast("กรุณาซิงค์ข้อมูลให้สำเร็จก่อนรันกฎ");
@@ -2402,7 +2425,6 @@
             if(!silent) window.showToast("กำลังประมวลผลกฎขั้นสูง... อาจใช้เวลาสักครู่ในการดึงข้อมูลย้อนหลัง");
             let triggeredCount = 0;
             
-            // Cache data from specific timeframes to reduce API load
             const insightCache = {};
 
             for (let folder of window.ruleFolders) {
@@ -2427,21 +2449,18 @@
 
                         let ruleResult = null;
 
-                        // Evaluate conditions for this campaign
                         for (let idx = 0; idx < rule.conditions.length; idx++) {
                             const cond = rule.conditions[idx];
                             const metric = cond.metric;
                             const operator = cond.operator;
                             const val = parseFloat(cond.value) || 0;
-                            const timeframe = cond.timeframe || currentDatePreset; // Fallback
+                            const timeframe = cond.timeframe || currentDatePreset; 
 
                             let insightData = null;
                             
-                            // Optimization: If the required timeframe is the same as the current global view, reuse the data
                             if (timeframe === currentDatePreset) {
                                 insightData = (camp.insights && camp.insights.data && camp.insights.data.length > 0) ? camp.insights.data[0] : {};
                             } else {
-                                // Must fetch specific timeframe for this condition
                                 const cacheKey = `${camp.id}_${timeframe}`;
                                 if (!insightCache[cacheKey]) {
                                     try {
@@ -2455,7 +2474,6 @@
                                 insightData = insightCache[cacheKey];
                             }
 
-                            // Extract metrics
                             const spendNum = parseFloat(insightData.spend || 0);
                             const purchases = parseInt(window.getFbActionVal(insightData.actions, purTypesList));
                             const msgs = parseInt(window.getFbActionVal(insightData.actions, msgTypesList));
@@ -2487,11 +2505,9 @@
                             }
                         }
 
-                        // Apply action if rule passes
                         if (ruleResult) {
                             let canExecute = true;
 
-                            // Check cooldown for budget rules
                             if (action === 'inc_budget' || action === 'dec_budget') {
                                 const freqHours = parseFloat(rule.actionFreq) || 24;
                                 const cacheKey = `last_exec_${folder.id}_${ruleIdx}_${camp.id}`;
@@ -2539,7 +2555,7 @@
                                             newBudget = currentBudget - (currentBudget * (pct / 100));
                                         } else if (action === 'reset_budget') {
                                             const targetVal = parseFloat(rule.actionVal) || 0;
-                                            newBudget = targetVal * 100; // Facebook API requires budget in cents (e.g., THB * 100)
+                                            newBudget = targetVal * 100; 
                                         }
                                         
                                         if (Math.floor(newBudget) !== Math.floor(currentBudget)) {
@@ -2565,21 +2581,32 @@
                         }
                     }
                 }
+            }
 
-                if (triggeredCount > 0) {
-                    window.showToast(`🤖 บอททำงานสำเร็จ! มีการอัปเดตไป ${triggeredCount} แคมเปญ`);
-                    setTimeout(() => window.syncData(true), 2500);
-                } else {
-                    if(!silent) window.showToast("ตรวจสอบแล้ว ไม่มีแคมเปญใดเข้าเงื่อนไข");
-                }
-            };
+            if (triggeredCount > 0) {
+                window.showToast(`🤖 บอททำงานสำเร็จ! มีการอัปเดตไป ${triggeredCount} แคมเปญ`);
+                setTimeout(() => window.syncData(true), 2500);
+            } else {
+                if(!silent) window.showToast("ตรวจสอบแล้ว ไม่มีแคมเปญใดเข้าเงื่อนไข");
+            }
+        };
+
+        // ====== ซ่อมแซมโค้ดส่วนของ "คำนวณจุดคุ้มทุน" ที่ขาดหายไป ====== //
+        window.calculateBreakeven = function() {
+            const price = parseFloat(document.getElementById('bePrice').value) || 0;
+            const cost = parseFloat(document.getElementById('beCost').value) || 0;
+            const shipping = parseFloat(document.getElementById('beShipping').value) || 0;
+            const cod = parseFloat(document.getElementById('beCOD').value) || 0;
             const other = parseFloat(document.getElementById('beOther').value) || 0;
             const adsCost = parseFloat(document.getElementById('beAdsCost').value) || 0;
-            if (price === 0) return window.showToast("กรุณาใส่ราคาขายเพื่อคำนวณ");
+            
+            if (price <= 0) return window.showToast("กรุณาใส่ราคาขายเพื่อคำนวณ");
+            
             const totalCost = cost + shipping + cod + other;
             const targetCpa = price - totalCost;
             const targetRoas = totalCost > 0 ? price / totalCost : 0;
             const netProfit = targetCpa - adsCost;
+            
             document.getElementById('resTotalCost').innerText = '฿' + totalCost.toLocaleString(undefined, {minimumFractionDigits: 2});
             document.getElementById('resProfit').innerText = '฿' + targetCpa.toLocaleString(undefined, {minimumFractionDigits: 2});
             document.getElementById('resProfit').className = targetCpa > 0 ? 'text-3xl font-bold text-gray-700' : 'text-3xl font-bold text-red-500';
