@@ -2142,6 +2142,7 @@
             const actionVal = ruleData ? ruleData.actionVal : '';
             const actionFreq = ruleData && ruleData.actionFreq ? ruleData.actionFreq : 24;
             const actionTime = ruleData && ruleData.actionTime ? ruleData.actionTime : '00:00';
+            const maxBudgetLimit = ruleData && ruleData.maxBudgetLimit ? ruleData.maxBudgetLimit : '';
             
             let conditionsHtml = '';
             const renderCond = (cond, idx) => {
@@ -2220,6 +2221,11 @@
                                 <input type="number" value="${actionFreq}" placeholder="24" class="action-freq-input w-16 border border-gray-300 rounded-lg p-2 text-center shadow-sm" title="ระยะเวลาหน่วงก่อนปรับงบครั้งถัดไป">
                                 <span class="text-xs font-bold text-gray-600">ชม.</span>
                             </div>
+                            <div class="action-limit-box ${action === 'inc_budget' ? 'flex' : 'hidden'} pl-3 ml-2 border-l-2 border-indigo-200 gap-2 items-center">
+                                <span class="text-xs font-bold text-gray-600">แต่งบรวมไม่เกิน</span>
+                                <input type="number" value="${maxBudgetLimit}" placeholder="ไม่มีลิมิต" class="action-limit-input w-24 border border-gray-300 rounded-lg p-2 text-center shadow-sm" title="จำกัดงบรายวันสูงสุดไม่เกิน (บาท)">
+                                <span class="text-xs font-bold text-gray-600">บาท</span>
+                            </div>
                         </div>
                         <div class="action-reset-box ${action === 'reset_budget' ? 'flex' : 'hidden'} gap-2 items-center flex-wrap">
                             <span class="font-bold text-gray-600" data-i18n="lblTo">เป็น</span>
@@ -2258,6 +2264,8 @@
             const val = selectEl.value;
             ruleCard.querySelector('.action-value-box').classList.toggle('hidden', val !== 'inc_budget' && val !== 'dec_budget');
             ruleCard.querySelector('.action-reset-box').classList.toggle('hidden', val !== 'reset_budget');
+            const limitBox = ruleCard.querySelector('.action-limit-box');
+            if (limitBox) limitBox.classList.toggle('hidden', val !== 'inc_budget');
         };
 
         window.removeCondition = function(btn) {
@@ -2329,16 +2337,21 @@
                 const actionFreqInput = card.querySelector('.action-freq-input');
                 const actionResetInput = card.querySelector('.action-reset-input');
                 const actionTimeInput = card.querySelector('.action-time-input');
+                const actionLimitInput = card.querySelector('.action-limit-input');
                 
                 const name = nameInput ? nameInput.value : '';
                 const action = actionSelect ? actionSelect.value : 'pause';
                 let actionVal = '';
                 let actionFreq = 24;
                 let actionTime = '00:00';
+                let maxBudgetLimit = '';
                 
                 if(action === 'inc_budget' || action === 'dec_budget') {
                     actionVal = actionValInput ? actionValInput.value : '';
                     actionFreq = actionFreqInput ? parseFloat(actionFreqInput.value) || 24 : 24;
+                    if (action === 'inc_budget') {
+                        maxBudgetLimit = actionLimitInput && actionLimitInput.value ? parseFloat(actionLimitInput.value) : '';
+                    }
                 }
                 else if(action === 'reset_budget') {
                     actionVal = actionResetInput ? actionResetInput.value : '';
@@ -2369,7 +2382,7 @@
                 });
 
                 if(name && conditions.length > 0) {
-                    rules.push({ name, action, actionVal, actionFreq, actionTime, conditions });
+                    rules.push({ name, action, actionVal, actionFreq, actionTime, maxBudgetLimit, conditions });
                 }
             });
 
@@ -2587,6 +2600,18 @@
                                         if (action === 'inc_budget') {
                                             const pct = parseFloat(rule.actionVal) || 0;
                                             newBudget = currentBudget + (currentBudget * (pct / 100));
+                                            
+                                            // เช็คเงื่อนไขจำกัดงบประมาณ (Max Budget Limit)
+                                            if (rule.maxBudgetLimit) {
+                                                const limitInCents = rule.maxBudgetLimit * 100; // FB API เก็บค่าเงินเป็นเซนต์
+                                                if (currentBudget >= limitInCents) {
+                                                    // ถ้างบปัจจุบันถึงขีดจำกัดแล้ว หรือเกินแล้ว ไม่ต้องเพิ่มอีก
+                                                    newBudget = currentBudget;
+                                                } else if (newBudget > limitInCents) {
+                                                    // ถ้าเพิ่มแล้วเกิน ให้ดันไปชนที่ขีดจำกัดพอดี
+                                                    newBudget = limitInCents;
+                                                }
+                                            }
                                         } else if (action === 'dec_budget') {
                                             const pct = parseFloat(rule.actionVal) || 0;
                                             newBudget = currentBudget - (currentBudget * (pct / 100));
