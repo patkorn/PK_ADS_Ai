@@ -2508,7 +2508,44 @@
                         if (ruleResult) {
                             let canExecute = true;
 
-                            if (action === 'inc_budget' || action === 'dec_budget') {
+                            // ====== โค้ดที่เพิ่มใหม่: ระบบจำยอดออเดอร์ล่าสุด (Tracking Target Metrics) ======
+                            const memoryKey = `last_metric_${folder.id}_${ruleIdx}_${camp.id}`;
+                            const lastMemory = JSON.parse(localStorage.getItem(memoryKey) || '{}');
+                            
+                            // สมมติว่าเราต้องการให้เพิ่มงบ ก็ต่อเมื่อยอด Purchases หรือ Messages "เพิ่มขึ้น" เท่านั้น
+                            // ตรวจสอบว่ากฎนี้มีเงื่อนไขเกี่ยวกับจำนวนหรือไม่
+                            const hasPurchaseCond = rule.conditions.some(c => c.metric === 'purchases');
+                            const hasMessageCond = rule.conditions.some(c => c.metric === 'messages');
+
+                            // ถ้าเป็นกฎให้ "เพิ่มงบ" และมีเงื่อนไขเรื่องจำนวน เราจะบังคับให้ต้องมียอดเพิ่มขึ้นเท่านั้น
+                            if (action === 'inc_budget' && (hasPurchaseCond || hasMessageCond)) {
+                                const currentPurchases = parseInt(window.getFbActionVal(camp.insights?.data?.[0]?.actions, purTypesList)) || 0;
+                                const currentMessages = parseInt(window.getFbActionVal(camp.insights?.data?.[0]?.actions, msgTypesList)) || 0;
+                                
+                                const lastPurchases = parseInt(lastMemory.purchases) || 0;
+                                const lastMessages = parseInt(lastMemory.messages) || 0;
+
+                                // ตรรกะ: ถ้ายอดไม่เพิ่มเลยจากครั้งล่าสุดที่ปรับงบ ให้ไม่อนุญาตให้ทำงาน
+                                if (hasPurchaseCond && currentPurchases <= lastPurchases) {
+                                    canExecute = false;
+                                }
+                                if (hasMessageCond && currentMessages <= lastMessages) {
+                                    canExecute = false;
+                                }
+                                
+                                // ถ้าผ่านเงื่อนไข ให้จำยอดปัจจุบันไว้ใช้เปรียบเทียบรอบหน้า
+                                if (canExecute) {
+                                    localStorage.setItem(memoryKey, JSON.stringify({
+                                        purchases: currentPurchases,
+                                        messages: currentMessages,
+                                        timestamp: Date.now()
+                                    }));
+                                }
+                            }
+                            // ======================================================================
+
+                            // Check cooldown for budget rules
+                            if (canExecute && (action === 'inc_budget' || action === 'dec_budget')) {
                                 const freqHours = parseFloat(rule.actionFreq) || 24;
                                 const cacheKey = `last_exec_${folder.id}_${ruleIdx}_${camp.id}`;
                                 const lastExec = localStorage.getItem(cacheKey);
@@ -2519,7 +2556,7 @@
                                         canExecute = false;
                                     }
                                 }
-                            } else if (action === 'reset_budget') {
+                            } else if (canExecute && action === 'reset_budget') {
                                 const resetTime = rule.actionTime || '00:00';
                                 const [targetHour, targetMin] = resetTime.split(':').map(Number);
                                 const now = new Date();
