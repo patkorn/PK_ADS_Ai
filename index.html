@@ -245,6 +245,16 @@
                             <h2 class="text-2xl font-bold text-gray-800" data-i18n="campTitle">จัดการแคมเปญ</h2>
                             <p class="text-gray-500" data-i18n="campSubtitle">วิเคราะห์และเปิด/ปิดแคมเปญแบบ Real-time</p>
                         </div>
+                        <div class="flex items-center gap-3 bg-white p-1.5 rounded-lg border border-gray-200 shadow-sm">
+                            <span class="text-sm font-bold text-gray-600 pl-2">เลือก <span id="campSelectedCount" class="text-fb-blue">0</span> รายการ</span>
+                            <div class="h-6 w-px bg-gray-300"></div>
+                            <button onclick="window.bulkToggleCampaigns(true)" class="bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-1.5 rounded-md font-bold text-sm transition shadow-sm flex items-center opacity-50 pointer-events-none" id="btnBulkActivate">
+                                <i class="fa-solid fa-play mr-1.5"></i> เปิด
+                            </button>
+                            <button onclick="window.bulkToggleCampaigns(false)" class="bg-red-500 hover:bg-red-600 text-white px-4 py-1.5 rounded-md font-bold text-sm transition shadow-sm flex items-center opacity-50 pointer-events-none" id="btnBulkPause">
+                                <i class="fa-solid fa-pause mr-1.5"></i> ปิด
+                            </button>
+                        </div>
                     </div>
 
                     <!-- AI Summary Banner -->
@@ -261,6 +271,9 @@
                             <table class="w-full text-left border-collapse whitespace-nowrap relative">
                                 <thead class="sticky top-0 z-20">
                                     <tr class="bg-gray-50 text-xs text-text-muted font-bold uppercase shadow-sm border-b border-gray-200">
+                                        <th class="p-4 w-10 text-center bg-gray-50">
+                                            <input type="checkbox" id="selectAllCamps" onclick="window.toggleAllCamps(this)" class="w-4 h-4 text-fb-blue rounded cursor-pointer border-gray-300">
+                                        </th>
                                         <th class="p-4 w-16 text-center bg-gray-50" data-i18n="colOnOff">เปิด/ปิด</th>
                                         <th class="p-4 bg-gray-50 text-center">คำแนะนำ AI</th>
                                         <th class="p-4 min-w-[200px] bg-gray-50" data-i18n="colName">ชื่อแคมเปญ</th>
@@ -280,7 +293,7 @@
                                     </tr>
                                 </thead>
                                 <tbody class="text-sm" id="campaignTableBody">
-                                    <tr><td colspan="16" class="p-6 text-center text-gray-500">กรุณากด "ซิงค์ข้อมูล" เพื่อดึงแคมเปญจริง</td></tr>
+                                    <tr><td colspan="17" class="p-6 text-center text-gray-500">กรุณากด "ซิงค์ข้อมูล" เพื่อดึงแคมเปญจริง</td></tr>
                                 </tbody>
                             </table>
                         </div>
@@ -1217,98 +1230,37 @@
             window.renderDashboardChart();
         };
 
-        window.addAdAccountInput = function(val = '') {
-            const container = document.getElementById('adAccountsContainer');
-            if(!container) return;
-            const div = document.createElement('div');
-            div.className = 'flex gap-2';
-            div.innerHTML = `<input type="text" value="${val}" class="ad-account-input w-full border border-gray-300 rounded-lg p-3 outline-none focus:border-fb-blue focus:ring-1 focus:ring-fb-blue font-mono text-sm" placeholder="เช่น act_1234567890"><button onclick="window.removeAdAccountInput(this)" class="bg-red-50 text-red-500 px-4 rounded-lg hover:bg-red-100 transition" title="ลบออก"><i class="fa-solid fa-trash"></i></button>`;
-            container.appendChild(div);
-        };
-
-        window.removeAdAccountInput = function(btn) {
-            const container = document.getElementById('adAccountsContainer');
-            if (container.children.length > 1) {
-                btn.parentElement.remove();
-            } else {
-                btn.parentElement.querySelector('input').value = '';
-                window.showToast("ต้องมีอย่างน้อย 1 บัญชีโฆษณา");
-            }
-        };
-
-        window.updateAdAccountDropdown = function() {
-            const selector = document.getElementById('adAccountSelector');
-            if(!selector || !loggedInEmployee) return;
-            selector.innerHTML = '';
-            const accounts = loggedInEmployee.fb_ad_accounts || [];
-            if(accounts.length > 0) {
-                accounts.forEach(acc => selector.add(new Option(acc, acc)));
-                return; 
-            }
-            selector.add(new Option("-- เพิ่ม Ad Account ในตั้งค่า --", ""));
-        };
-
-        window.saveToken = async function() {
-            if(!loggedInEmployee) return;
-            const token = document.getElementById('fbTokenInput').value.trim();
-            const accountInputs = document.querySelectorAll('.ad-account-input');
-            const accounts = [];
-            
-            accountInputs.forEach(input => {
-                const val = input.value.trim();
-                if(val) accounts.push(val);
-            });
-            
-            if(token && accounts.length > 0) {
-                const originalBtnHtml = document.querySelector('button[onclick="window.saveToken()"]').innerHTML;
-                document.querySelector('button[onclick="window.saveToken()"]').innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i> กำลังบันทึก...';
-                
-                loggedInEmployee.fb_token = token;
-                loggedInEmployee.fb_ad_accounts = accounts;
-
-                try {
-                    await dbService.updateEmployee(loggedInEmployee.id, { fb_token: token, fb_ad_accounts: accounts });
-                    window.showToast("บันทึกข้อมูลเข้าบัญชีของคุณเรียบร้อยแล้ว!");
-                    window.updateAdAccountDropdown();
-                    setTimeout(() => window.syncData(), 1000);
-                } catch(e) {
-                    console.error(e);
-                    window.showToast("เกิดข้อผิดพลาดในการบันทึกข้อมูล");
-                }
-                
-                document.querySelector('button[onclick="window.saveToken()"]').innerHTML = originalBtnHtml;
-            } else {
-                window.showToast("กรุณากรอก Token และอย่างน้อย 1 บัญชีโฆษณา");
-            }
-        };
-
         window.renderDashboardChart = function() {
-            if (!globalChartData || globalChartData.length === 0) {
-                if(spendChartInstance) { 
-                    spendChartInstance.data.labels = []; 
-                    spendChartInstance.data.datasets[0].data = []; 
-                    spendChartInstance.update(); 
+            try {
+                if (!globalChartData || globalChartData.length === 0) {
+                    if(spendChartInstance) { 
+                        spendChartInstance.data.labels = []; 
+                        spendChartInstance.data.datasets[0].data = []; 
+                        spendChartInstance.update(); 
+                    }
+                    return;
                 }
-                return;
-            }
-            let sortedData = [...globalChartData].sort((a, b) => b[currentChartMetric] - a[currentChartMetric]);
-            let topItems = sortedData.slice(0, 10);
-            const metricConfig = {
-                'spend': { label: 'Spend (฿)', title: currentLang === 'th' ? 'ยอดใช้จ่ายแยกตามแคมเปญ (฿)' : 'SPEND PER CAMPAIGN (฿)' },
-                'cost_msg': { label: 'Cost/Msg (฿)', title: currentLang === 'th' ? 'ต้นทุนการทักแยกตามแคมเปญ (฿)' : 'COST PER MSG PER CAMPAIGN (฿)' },
-                'cost_pur': { label: 'Cost/Purchase (฿)', title: currentLang === 'th' ? 'ต้นทุนการซื้อแยกตามแคมเปญ (฿)' : 'COST PER PURCHASE PER CAMPAIGN (฿)' },
-                'roas': { label: 'ROAS (x)', title: currentLang === 'th' ? 'ROAS แยกตามแคมเปญ (x)' : 'ROAS PER CAMPAIGN (x)' },
-                'ctr': { label: 'CTR (%)', title: currentLang === 'th' ? 'CTR แยกตามแคมเปญ (%)' : 'CTR PER CAMPAIGN (%)' },
-                'cpm': { label: 'CPM (฿)', title: currentLang === 'th' ? 'CPM แยกตามแคมเปญ (฿)' : 'CPM PER CAMPAIGN (฿)' }
-            };
-            document.getElementById('chartMainTitle').innerText = metricConfig[currentChartMetric].title;
-            if (spendChartInstance) {
-                spendChartInstance.data.labels = topItems.map(item => item.name.length > 15 ? item.name.substring(0, 15) + '...' : item.name);
-                spendChartInstance.data.datasets[0].label = metricConfig[currentChartMetric].label;
-                spendChartInstance.data.datasets[0].data = topItems.map(item => item[currentChartMetric]);
-                const colors = ['#1877F2', '#10B981', '#F43F5E', '#D946EF', '#8B5CF6', '#F59E0B', '#0EA5E9', '#14B8A6'];
-                spendChartInstance.data.datasets[0].backgroundColor = topItems.map((_, i) => colors[i % colors.length]);
-                spendChartInstance.update();
+                let sortedData = [...globalChartData].sort((a, b) => b[currentChartMetric] - a[currentChartMetric]);
+                let topItems = sortedData.slice(0, 10);
+                const metricConfig = {
+                    'spend': { label: 'Spend (฿)', title: currentLang === 'th' ? 'ยอดใช้จ่ายแยกตามแคมเปญ (฿)' : 'SPEND PER CAMPAIGN (฿)' },
+                    'cost_msg': { label: 'Cost/Msg (฿)', title: currentLang === 'th' ? 'ต้นทุนการทักแยกตามแคมเปญ (฿)' : 'COST PER MSG PER CAMPAIGN (฿)' },
+                    'cost_pur': { label: 'Cost/Purchase (฿)', title: currentLang === 'th' ? 'ต้นทุนการซื้อแยกตามแคมเปญ (฿)' : 'COST PER PURCHASE PER CAMPAIGN (฿)' },
+                    'roas': { label: 'ROAS (x)', title: currentLang === 'th' ? 'ROAS แยกตามแคมเปญ (x)' : 'ROAS PER CAMPAIGN (x)' },
+                    'ctr': { label: 'CTR (%)', title: currentLang === 'th' ? 'CTR แยกตามแคมเปญ (%)' : 'CTR PER CAMPAIGN (%)' },
+                    'cpm': { label: 'CPM (฿)', title: currentLang === 'th' ? 'CPM แยกตามแคมเปญ (฿)' : 'CPM PER CAMPAIGN (฿)' }
+                };
+                document.getElementById('chartMainTitle').innerText = metricConfig[currentChartMetric].title;
+                if (spendChartInstance) {
+                    spendChartInstance.data.labels = topItems.map(item => item.name.length > 15 ? item.name.substring(0, 15) + '...' : item.name);
+                    spendChartInstance.data.datasets[0].label = metricConfig[currentChartMetric].label;
+                    spendChartInstance.data.datasets[0].data = topItems.map(item => item[currentChartMetric]);
+                    const colors = ['#1877F2', '#10B981', '#F43F5E', '#D946EF', '#8B5CF6', '#F59E0B', '#0EA5E9', '#14B8A6'];
+                    spendChartInstance.data.datasets[0].backgroundColor = topItems.map((_, i) => colors[i % colors.length]);
+                    spendChartInstance.update();
+                }
+            } catch (e) {
+                console.error("Chart Rendering Error: ", e);
             }
         };
 
@@ -1443,8 +1395,14 @@
                 }
                 window.populateABDropdowns();
                 window.populateCreativeDropdown(); 
+                
+                const selectAllCb = document.getElementById('selectAllCamps');
+                if(selectAllCb) selectAllCb.checked = false;
+                if(window.updateCampSelectCount) window.updateCampSelectCount();
+
                 const tbody = document.getElementById('campaignTableBody');
                 tbody.innerHTML = ''; 
+                
                 let chartItems = [];
                 let winnerCampCount = 0;
                 let loserCampCount = 0;
@@ -1522,6 +1480,9 @@
                         tr.className = "border-b border-gray-100 hover:bg-gray-50";
                         tr.innerHTML = `
                             <td class="p-3 text-center">
+                                <input type="checkbox" class="camp-checkbox w-4 h-4 text-fb-blue rounded cursor-pointer border-gray-300" value="${camp.id}" onchange="window.updateCampSelectCount()">
+                            </td>
+                            <td class="p-3 text-center">
                                 <label class="relative inline-flex items-center cursor-pointer">
                                   <input type="checkbox" id="toggle_c${index}" ${isActive ? 'checked' : ''} onchange="window.toggleRealCampaign('${camp.id}', this.checked)" class="sr-only peer">
                                   <div class="w-11 h-6 bg-gray-300 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-fb-blue shadow-sm"></div>
@@ -1570,6 +1531,7 @@
                     const totalTr = document.createElement('tr');
                     totalTr.className = "bg-fb-light border-t-2 border-fb-blue font-bold text-gray-800 sticky bottom-0 z-10"; 
                     totalTr.innerHTML = `
+                        <td class="p-3 bg-fb-light"></td>
                         <td class="p-3 text-center bg-fb-light"></td>
                         <td class="p-3 bg-fb-light"></td>
                         <td class="p-3 bg-fb-light">รวมทั้งหมด (Total)</td>
@@ -1614,9 +1576,74 @@
                 if(!silent) window.showToast(currentLang === 'th' ? "ดึงข้อมูลจริงสำเร็จ!" : "Data synced & analyzed!");
             } catch (err) {
                 console.error(err);
-                window.showToast("Error: " + err.message);
+                let errMsgTh = "API Error: " + err.message;
+                if (err.message && (err.message.includes("ads_management") || err.message.includes("ads_read"))) {
+                    errMsgTh = "Token ขาดสิทธิ์ (กรุณาตรวจสอบว่ามีสิทธิ์และยังไม่หมดอายุ)";
+                } else if (err.message && (err.message.includes("Invalid OAuth access token") || err.message.includes("Malformed access token"))) {
+                    errMsgTh = "Token ไม่ถูกต้อง หรือหมดอายุแล้ว";
+                } else if (err.message && (err.message.includes("does not exist") || err.message.includes("Invalid parameter"))) {
+                    errMsgTh = "ไม่พบ Ad Account นี้ (ตรวจสอบตัวเลขให้ถูกต้อง)";
+                }
+                window.showToast(currentLang === 'th' ? errMsgTh : "Error: " + err.message);
             }
+            
             icon.classList.remove('fa-spin');
+        };
+
+        window.toggleAllCamps = function(source) {
+            const checkboxes = document.querySelectorAll('.camp-checkbox');
+            checkboxes.forEach(cb => cb.checked = source.checked);
+            window.updateCampSelectCount();
+        };
+
+        window.updateCampSelectCount = function() {
+            const count = document.querySelectorAll('.camp-checkbox:checked').length;
+            document.getElementById('campSelectedCount').innerText = count;
+            const btnActivate = document.getElementById('btnBulkActivate');
+            const btnPause = document.getElementById('btnBulkPause');
+            if(count > 0) {
+                btnActivate.classList.remove('opacity-50', 'pointer-events-none');
+                btnPause.classList.remove('opacity-50', 'pointer-events-none');
+            } else {
+                btnActivate.classList.add('opacity-50', 'pointer-events-none');
+                btnPause.classList.add('opacity-50', 'pointer-events-none');
+            }
+        };
+
+        window.bulkToggleCampaigns = async function(isActive) {
+            if(!loggedInEmployee || !loggedInEmployee.fb_token) return window.showToast("กรุณาตั้งค่า Token ก่อนใช้งาน");
+            const token = loggedInEmployee.fb_token;
+            const checkboxes = document.querySelectorAll('.camp-checkbox:checked');
+            if(checkboxes.length === 0) return;
+
+            const status = isActive ? 'ACTIVE' : 'PAUSED';
+            const actionText = isActive ? 'เปิด' : 'ปิด';
+            
+            window.showToast(`กำลัง${actionText} ${checkboxes.length} แคมเปญ...`);
+            
+            try {
+                // ยิงคำสั่งเปลี่ยนสถานะไปที่เฟสบุ๊คพร้อมๆ กันเพื่อให้ทำงานไวขึ้น
+                const promises = Array.from(checkboxes).map(cb => {
+                    const campaignId = cb.value;
+                    return fetch(`https://graph.facebook.com/v21.0/${campaignId}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ status: status, access_token: token })
+                    });
+                });
+                
+                await Promise.all(promises);
+                window.showToast(`ดำเนินการ${actionText}แคมเปญสำเร็จ!`);
+                
+                // ล้างค่าที่เลือกและโหลดตารางใหม่
+                document.getElementById('selectAllCamps').checked = false;
+                window.updateCampSelectCount();
+                setTimeout(() => { window.syncData(true); }, 1500);
+                
+            } catch(err) {
+                console.error(err);
+                window.showToast("เกิดข้อผิดพลาดในการปรับสถานะแคมเปญ");
+            }
         };
 
         window.toggleRealCampaign = async function(campaignId, isActive) {
