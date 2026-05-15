@@ -43,6 +43,12 @@
         
         .sticky-header th { position: sticky; top: 0; z-index: 30; background: #f8fafc; }
         .sticky-total td { position: sticky; bottom: 0; z-index: 30; background: #E7F3FF; border-top: 2px solid #1877F2; }
+
+        /* แก้ไขบั๊กปุ่มสวิตช์ Toggle */
+        .toggle-checkbox:checked { right: 0; border-color: #1877F2; }
+        .toggle-checkbox:checked + .toggle-label { background-color: #1877F2; }
+        .toggle-checkbox { right: 20px; z-index: 1; border-color: #e2e8f0; transition: all 0.3s; }
+        .toggle-label { width: 40px; height: 20px; background-color: #cbd5e1; border-radius: 9999px; transition: all 0.3s; }
     </style>
 </head>
 <body class="flex h-screen overflow-hidden">
@@ -64,11 +70,13 @@
                 <p class="text-sm text-gray-500 mt-1 font-medium" data-i18n="authSubtitle">ระบบจัดการแอดสำหรับพนักงาน</p>
             </div>
             
+            <!-- Tabs -->
             <div class="flex border-b border-gray-200 mb-6">
                 <button onclick="window.setAuthMode('login')" id="tabLogin" class="flex-1 pb-3 font-bold text-fb-blue border-b-2 border-fb-blue transition-colors">เข้าสู่ระบบ (Login)</button>
                 <button onclick="window.setAuthMode('register')" id="tabRegister" class="flex-1 pb-3 font-bold text-gray-400 border-b-2 border-transparent hover:text-gray-600 transition-colors">สมัครใช้งาน (Register)</button>
             </div>
 
+            <!-- Login Form -->
             <div id="formLogin" class="animate-fade-in">
                 <label class="block text-sm font-bold text-gray-700 mb-2">ชื่อพนักงาน / Username</label>
                 <div class="relative mb-4">
@@ -85,6 +93,7 @@
                 </button>
             </div>
 
+            <!-- Register Form -->
             <div id="formRegister" class="hidden animate-fade-in">
                 <label class="block text-sm font-bold text-gray-700 mb-2">สร้างชื่อพนักงาน / New Username</label>
                 <div class="relative mb-4">
@@ -168,7 +177,7 @@
                         <div id="btnLangEN" class="px-3 py-1.5 rounded-md text-gray-500 transition">EN</div>
                         <div id="btnLangTH" class="px-3 py-1.5 rounded-md bg-fb-blue text-white shadow-sm transition">TH</div>
                     </div>
-                    <button onclick="window.syncData()" class="bg-fb-blue hover:bg-fb-dark text-white px-4 py-2 rounded-lg font-bold text-sm shadow-sm flex items-center">
+                    <button onclick="window.syncData()" class="bg-fb-blue hover:bg-fb-dark text-white px-4 py-2 rounded-lg font-bold text-sm shadow-sm flex items-center transition">
                         <i class="fa-solid fa-rotate-right mr-2" id="syncIcon"></i> <span data-i18n="btnSync">ซิงค์ข้อมูล</span>
                     </button>
                 </div>
@@ -185,33 +194,41 @@
                         </div>
                     </div>
 
+                    <!-- 6 KPI Cards -->
                     <div class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-4">
                         <div class="kpi-card bg-white rounded-xl p-4 shadow-sm border-2 border-transparent ring-2 ring-fb-blue cursor-pointer" onclick="window.changeChartMetric('spend', this)" id="card-metric-spend">
                             <p class="text-xs text-text-muted font-bold uppercase mb-1" data-i18n="kpiSpend">ยอดใช้จ่าย</p>
                             <h3 class="text-2xl font-black text-gray-800" id="kpi-spend">฿0</h3>
+                            <p class="text-xs text-text-muted mt-2 font-medium">รวมทั้งหมด</p>
                         </div>
                         <div class="kpi-card bg-white rounded-xl p-4 shadow-sm border-2 border-gray-100 cursor-pointer" onclick="window.changeChartMetric('cost_msg', this)">
                             <p class="text-xs text-text-muted font-bold uppercase mb-1" data-i18n="kpiCostMsg">ต้นทุนทัก</p>
                             <h3 class="text-2xl font-black text-fb-blue" id="kpi-cost-msg">฿0</h3>
+                            <p class="text-xs text-text-muted mt-2 font-medium">เฉลี่ยบัญชี</p>
                         </div>
                         <div class="kpi-card bg-white rounded-xl p-4 shadow-sm border-2 border-gray-100 cursor-pointer" onclick="window.changeChartMetric('cost_pur', this)">
                             <p class="text-xs text-text-muted font-bold uppercase mb-1" data-i18n="kpiCostPur">ต้นทุนซื้อ</p>
                             <h3 class="text-2xl font-black text-fb-blue" id="kpi-cost-pur">฿0</h3>
+                            <p class="text-xs text-text-muted mt-2 font-medium">เฉลี่ยบัญชี</p>
                         </div>
                         <div class="kpi-card bg-white rounded-xl p-4 shadow-sm border-2 border-gray-100 cursor-pointer" onclick="window.changeChartMetric('roas', this)">
                             <p class="text-xs text-text-muted font-bold uppercase mb-1">ROAS</p>
                             <h3 class="text-2xl font-black text-emerald-600" id="kpi-roas">0.00x</h3>
+                            <p class="text-xs text-text-muted mt-2 font-medium">เฉลี่ยบัญชี</p>
                         </div>
                         <div class="kpi-card bg-white rounded-xl p-4 shadow-sm border-2 border-gray-100 cursor-pointer" onclick="window.changeChartMetric('ctr', this)">
                             <p class="text-xs text-text-muted font-bold uppercase mb-1">CTR</p>
                             <h3 class="text-2xl font-black text-gray-800" id="kpi-ctr">0.00%</h3>
+                            <p class="text-xs text-text-muted mt-2 font-medium">เฉลี่ยบัญชี</p>
                         </div>
                         <div class="kpi-card bg-white rounded-xl p-4 shadow-sm border-2 border-gray-100 cursor-pointer" onclick="window.changeChartMetric('cpm', this)">
                             <p class="text-xs text-text-muted font-bold uppercase mb-1">CPM</p>
                             <h3 class="text-2xl font-black text-gray-800" id="kpi-cpm">฿0</h3>
+                            <p class="text-xs text-text-muted mt-2 font-medium">เฉลี่ยบัญชี</p>
                         </div>
                     </div>
 
+                    <!-- Dynamic Chart based on selected KPI -->
                     <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
                         <div class="flex justify-between items-center mb-4">
                             <h3 class="text-sm font-bold text-gray-800" id="chartMainTitle" data-i18n="chartSpend">ยอดใช้จ่ายแยกตามแคมเปญ (฿)</h3>
@@ -370,11 +387,9 @@
                             <h3 class="font-bold text-gray-800 text-sm"><i class="fa-regular fa-folder-open text-fb-blue mr-1"></i> <span data-i18n="ruleFolderLabel">โฟลเดอร์สำหรับแยกกฎ</span></h3>
                             <button onclick="window.addFolder()" class="text-xs font-bold text-fb-blue hover:underline"><i class="fa-solid fa-plus mr-1"></i> <span data-i18n="ruleAddFolder">เพิ่มโฟลเดอร์</span></button>
                         </div>
-                        <!-- TABS -->
                         <div class="flex gap-2 overflow-x-auto pb-2 mb-4 border-b border-gray-100 custom-scrollbar" id="folderTabsContainer">
                             <!-- Tabs injected via JS -->
                         </div>
-                        <!-- ACTIVE FOLDER SETTINGS -->
                         <div class="flex flex-col md:flex-row gap-4 items-end bg-gray-50 p-4 rounded-lg border border-gray-200">
                             <div class="flex-1 w-full">
                                 <label class="block text-xs font-bold text-gray-700 mb-1" data-i18n="ruleFolderName">ชื่อโฟลเดอร์ (Folder Name)</label>
@@ -404,15 +419,12 @@
                                 <option value="30">สแกนทุกๆ 30 นาที</option>
                                 <option value="60">สแกนทุกๆ 1 ชั่วโมง</option>
                             </select>
-                            
-                            <!-- ปรับเปลี่ยนสวิตซ์เป็นปุ่มแทน -->
                             <button id="btnToggleBot" onclick="window.toggleAutoBotAction()" class="bg-emerald-500 text-white px-5 py-2.5 rounded-lg font-bold shadow-md hover:bg-emerald-600 transition flex items-center">
                                 <i class="fa-solid fa-power-off mr-2"></i> <span>เริ่มบอท</span>
                             </button>
                         </div>
                     </div>
 
-                    <!-- CONTAINER FOR RULES OF THE ACTIVE FOLDER -->
                     <div id="rulesListContainer" class="space-y-6">
                         <!-- Rules injected via JS -->
                     </div>
@@ -741,7 +753,7 @@
     </div>
 
     <div id="toast" class="fixed bottom-5 right-5 bg-gray-800 text-white px-4 py-3 rounded-lg shadow-lg font-bold text-sm transform translate-y-20 opacity-0 transition-all duration-300 z-50 flex items-center">
-        <i class="fa-solid fa-circle-check text-emerald-400 mr-2 text-lg"></i><span id="toastMsg">--</span>
+        <i class="fa-solid fa-circle-check text-emerald-400 mr-2 text-lg"></i><span id="toastMsg" class="ml-2">--</span>
     </div>
 
     <script type="module">
@@ -820,7 +832,7 @@
                         document.getElementById('appContainer').classList.remove('hidden');
                         window.initDashboardForUser();
                         document.getElementById('globalLoader').classList.add('hidden');
-                        return; // หยุดการทำงานส่วนอื่น
+                        return; 
                     }
                 }
                 
@@ -836,72 +848,10 @@
             }
         });
 
-        const translations = {
-            en: {
-                appTitle: "Ads Manager", adAccount: "AD ACCOUNT", roleAdmin: "Admin", authSubtitle: "Employee Ads Management", btnLogout: "Logout",
-                menuDashboard: "Dashboard", menuCampaigns: "Campaigns", menuCreative: "AI Creative", menuInsights: "Insights", menuRules: "Rules", menuABTest: "A/B Testing", menuBreakeven: "Breakeven", menuPlanner: "Budget Planner", menuSettings: "Settings",
-                dateToday: "Today", dateYest: "Yesterday", date3: "Last 3 Days", date7: "Last 7 Days", date14: "Last 14 Days", date30: "Last 30 Days", btnSync: "Sync Data",
-                dashTitle: "Ads Account Overview", dashSubtitle: "Last updated: ",
-                kpiSpend: "Spend", kpiCostMsg: "Cost/Msg", kpiCostPur: "Cost/Purchase", chartSpend: "SPEND PER CAMPAIGN (฿)", chartDesc: "Click a card above to change chart",
-                campTitle: "Campaign Management", campSubtitle: "Analyze and turn on/off campaigns in real-time", btnCreate: "Create Campaign",
-                colOnOff: "ON/OFF", colName: "CAMPAIGN NAME", colBudget: "DAILY BUDGET", colSpend: "SPEND", colResult: "PURCHASES",
-                colReach: "REACH", colCpm: "CPM", colCtr: "CTR", colMsg: "MESSAGES", colCostMsg: "COST/MSG", colCostPur: "COST/PUR", colConvVal: "REVENUE", colRoas: "ROAS", colAdSpendPct: "AD SPEND %", colClosingRate: "CLOSING %",
-                crTitle: "AI Creative Analysis", crSubtitle: "Analyze creatives to find winners and losers",
-                crSelectCamp: "Select Campaign to Analyze", btnFetchCr: "Analyze Campaign",
-                crSummary: "This campaign has 3 ad creatives", crRecText: "AI Recommendation: 1 high-profit creative found (Clone), 1 loss-making creative (Turn off).",
-                crGood: "🟢 Good (Winner)", crMedium: "🟡 Medium", crBad: "🔴 Bad (Loser)", crBtnClone: "Clone this Ad", crBtnWatch: "Watch closely", crBtnStop: "Turn off immediately",
-                inTitle: "Insights & Breakdown", inSubtitle: "Analyze by Age, Gender, and Placements",
-                inDemographic: "Demographics (Age & Gender)", inPlacement: "Top Placements",
-                colAge: "Age", colGender: "Gender", colPlatform: "Platform", lblFemale: "Female", lblMale: "Male",
-                ruleTitle: "Automated Rules", ruleSubtitle: "Set conditions to pause ads automatically",
-                ruleFolderLabel: "Folders", ruleAddFolder: "Add Folder", ruleFolderName: "Folder Name", ruleKeyword: "Campaign Keyword (Leave blank for all)",
-                ruleName: "Rule Name", ruleAction: "Action to take", actPause: "Pause Campaign", actActivate: "Activate Campaign", actIncBg: "Increase Budget (%)", actDecBg: "Decrease Budget (%)", actResetBg: "Reset Budget",
-                ruleCond: "Conditions (When these are true)", ruleAnd: "AND", ruleAddCond: "Add Condition", ruleTime: "Time Range", btnSaveRule: "Save Rules to Cloud", btnAddRule: "Add New Rule",
-                lblTo: "To", lblBaht: "Baht", lblAtTime: "at time",
-                abTitle: "A/B Testing", abSubtitle: "Compare campaigns side-by-side to find the winner", abLevel: "Comparison Level", abBtnRun: "Run Comparison",
-                abAiTitle: "AI Analysis", abAiDesc: "Analyzing...",
-                breakTitle: "Breakeven Calculator", breakSubtitle: "Calculate Target CPA and Target ROAS",
-                lblPrice: "Selling Price", lblCost: "Product Cost", lblShipping: "Shipping Cost", lblCOD: "COD Fee", lblOther: "Other Costs", btnCalc: "Calculate Breakeven", btnClear: "Clear Data",
-                lblTotalCost: "Total Cost (Product)", lblProfit: "Max Cost/Purchase (CPA)", lblTargetROAS: "Target ROAS", breakCpaDesc: "Formula: Price - All Costs", breakRoasDesc: "Minimum ROAS to break even",
-                lblAdsCost: "Actual Ad Cost per Order", adsCostDesc: "Enter your current ad cost to calculate Net Profit", lblNetProfit: "Net Profit / Order", netProfitDesc: "Profit after product cost and ad cost",
-                planTitle: "Campaign Structure Planner", planSubtitle: "Calculate optimal campaigns and budget per page", lblTotalBudget: "Total Daily Budget (THB)", lblTotalPages: "Number of Pages", btnAnalyzePlan: "Analyze Structure",
-                lblStrategy: "Ad Strategy", stratScaling: "Scaling (CBO/ASC)", stratAnt: "Ant Army (ABO Fragmentation)",
-                planResBgPage: "Budget Per Page", planResCampPage: "Campaigns Per Page", planResBgCamp: "Budget Per Campaign", planResTotalCamps: "Total Campaigns (All pages)",
-                setTitle: "Private Connection Settings", setSubtitle: "Enter Facebook Access Token to manage ads", setTokenDesc: "Your token is securely isolated from other employees", btnSaveToken: "Save Token"
-            },
-            th: {
-                appTitle: "จัดการโฆษณา", adAccount: "บัญชีโฆษณา", roleAdmin: "พนักงานขาย", authSubtitle: "ระบบจัดการโฆษณาส่วนบุคคล", btnLogout: "ออกจากระบบ",
-                menuDashboard: "แดชบอร์ด", menuCampaigns: "แคมเปญ", menuCreative: "AI วิเคราะห์สื่อ", menuInsights: "ข้อมูลเชิงลึก", menuRules: "กฎอัตโนมัติ", menuABTest: "A/B Testing", menuBreakeven: "คำนวณจุดคุ้มทุน", menuPlanner: "วางแผนงบโฆษณา", menuSettings: "ตั้งค่า & โทเคน",
-                dateToday: "วันนี้", dateYest: "เมื่อวาน", date3: "3 วันล่าสุด", date7: "7 วันล่าสุด", date14: "14 วันล่าสุด", date30: "30 วันล่าสุด", btnSync: "ซิงค์ข้อมูล",
-                dashTitle: "ภาพรวมบัญชีโฆษณา", dashSubtitle: "อัปเดตล่าสุด: ",
-                kpiSpend: "ยอดใช้จ่าย", kpiCostMsg: "ต้นทุนทัก", kpiCostPur: "ต้นทุนซื้อ", chartSpend: "ยอดใช้จ่ายแยกตามแคมเปญ (฿)", chartDesc: "คลิกที่การ์ดด้านบนเพื่อเปลี่ยนกราฟ",
-                campTitle: "จัดการแคมเปญ", campSubtitle: "วิเคราะห์และเปิด/ปิดแคมเปญแบบ Real-time", btnCreate: "สร้างแคมเปญ",
-                colOnOff: "เปิด/ปิด", colName: "ชื่อแคมเปญ", colBudget: "งบต่อวัน", colSpend: "จ่ายไป", colResult: "การซื้อ",
-                colReach: "การเข้าถึง", colCpm: "CPM", colCtr: "CTR", colMsg: "ทักแชท", colCostMsg: "ต้นทุน/ทัก", colCostPur: "ต้นทุน/ซื้อ", colConvVal: "ยอดขาย", colRoas: "ROAS", colAdSpendPct: "%ค่าแอด", colClosingRate: "%ปิดการขาย",
-                crTitle: "AI วิเคราะห์สื่อโฆษณา (Creatives)", crSubtitle: "วิเคราะห์ภาพและวิดีโอเพื่อหาตัวชนะและตัวที่ควรปิด",
-                crSelectCamp: "เลือกแคมเปญเพื่อเจาะลึก (Select Campaign)", btnFetchCr: "วิเคราะห์แคมเปญนี้",
-                crSummary: "แคมเปญนี้มี 3 สื่อโฆษณา", crRecText: "คำแนะนำจาก AI: พบสื่อที่ทำกำไรได้ดีมาก 1 ตัว (แนะนำให้โคลน) และสื่อที่ขาดทุน 1 ตัว (แนะนำให้ปิด)",
-                crGood: "🟢 ดีมาก (Winner)", crMedium: "🟡 ปานกลาง", crBad: "🔴 แย่ (Loser)", crBtnClone: "โคลนสื่อนี้", crBtnWatch: "เฝ้าระวัง", crBtnStop: "ปิดสื่อนี้ทันที",
-                inTitle: "ข้อมูลเชิงลึก (Breakdown)", inSubtitle: "วิเคราะห์แยกตามอายุ เพศ และตำแหน่งการจัดวาง",
-                inDemographic: "ข้อมูลประชากร (อายุและเพศ)", inPlacement: "ตำแหน่งการจัดวางที่ขายได้ (Top Placements)",
-                colAge: "อายุ", colGender: "เพศ", colPlatform: "แพลตฟอร์ม", lblFemale: "หญิง", lblMale: "ชาย",
-                ruleTitle: "กฎอัตโนมัติ (Automated Rules)", ruleSubtitle: "ตั้งเงื่อนไขเพื่อเปิด/ปิดแอด หรือปรับงบอัตโนมัติตาม KPI",
-                ruleFolderLabel: "โฟลเดอร์สำหรับแยกกฎ", ruleAddFolder: "เพิ่มโฟลเดอร์", ruleFolderName: "ชื่อโฟลเดอร์ (Folder Name)", ruleKeyword: "คีย์เวิร์ดในชื่อแคมเปญ (เว้นว่าง = ใช้กับทุกแคมเปญ)",
-                ruleName: "ชื่อกฎ (Rule Name)", ruleAction: "การดำเนินการ (Action to take)", actPause: "ปิดแคมเปญ (Pause)", actActivate: "เปิดแคมเปญ (Activate)", actIncBg: "เพิ่มงบประมาณ (%)", actDecBg: "ลดงบประมาณ (%)", actResetBg: "รีเซ็ตงบประมาณ",
-                ruleCond: "เมื่อเงื่อนไขเหล่านี้เป็นจริง (Conditions)", ruleAnd: "และ (AND)", ruleAddCond: "เพิ่มเงื่อนไข", ruleTime: "ช่วงเวลาที่เช็ค (Time Range)", btnSaveRule: "บันทึกกฎทั้งหมดลง Cloud", btnAddRule: "เพิ่มกฎใหม่",
-                lblTo: "เป็น", lblBaht: "บาท", lblAtTime: "เวลา",
-                abTitle: "A/B Testing", abSubtitle: "เปรียบเทียบแคมเปญหรือชิ้นงานแบบ Side-by-side เพื่อหาผู้ชนะ", abLevel: "ระดับการเปรียบเทียบ", abBtnRun: "เริ่มเปรียบเทียบ",
-                abAiTitle: "AI วิเคราะห์ผลลัพธ์", abAiDesc: "กำลังวิเคราะห์เปรียบเทียบ...",
-                breakTitle: "คำนวณจุดคุ้มทุน", breakSubtitle: "คำนวณต้นทุนต่อการซื้อสูงสุด (Target CPA) และ ROAS ขั้นต่ำที่ไม่ขาดทุน",
-                lblPrice: "ราคาขาย", lblCost: "ต้นทุนสินค้า", lblShipping: "ค่าส่ง", lblCOD: "ค่าธรรมเนียม COD", lblOther: "ค่าใช้จ่ายอื่นๆ (แพ็คเกจ, แอดมิน)", btnCalc: "คำนวณจุดคุ้มทุน & กำไร", btnClear: "ล้างข้อมูล",
-                lblTotalCost: "ต้นทุนรวม (ไม่รวมแอด)", lblProfit: "ต้นทุนซื้อที่รับได้สูงสุด (Target CPA)", lblTargetROAS: "เป้าหมาย ROAS", breakCpaDesc: "สูตร: ราคาขาย - ต้นทุน - ค่าส่ง - COD - อื่นๆ", breakRoasDesc: "ROAS ขั้นต่ำที่ไม่ขาดทุน",
-                lblAdsCost: "ค่าแอดที่จ่ายจริง (ต่อ 1 ออเดอร์)", adsCostDesc: "ใส่ค่าแอดจริงของคุณเพื่อคำนวณ 'กำไรสุทธิ'", lblNetProfit: "กำไรสุทธิต่อออเดอร์", netProfitDesc: "กำไรหลังหักต้นทุนสินค้าและค่าแอดแล้ว",
-                planTitle: "วางแผนโครงสร้างแคมเปญ", planSubtitle: "คำนวณจำนวนแคมเปญและงบประมาณที่เหมาะสมต่อเพจ", lblTotalBudget: "งบรวมต่อวัน (บาท)", lblTotalPages: "จำนวนเพจที่ยิง", btnAnalyzePlan: "วิเคราะห์และวางโครงสร้างแคมเปญ",
-                lblStrategy: "กลยุทธ์ยิงแอด (Strategy)", stratScaling: "สูตรอัดงบ (CBO/ASC)", stratAnt: "สูตรกองทัพมด (ABO ซอยงบ)",
-                planResBgPage: "งบประมาณเฉลี่ยต่อเพจ", planResCampPage: "ควรสร้างแคมเปญต่อเพจ", planResBgCamp: "แนะนำให้ตั้งงบต่อ 1 แคมเปญ", planResTotalCamps: "รวมจำนวนแคมเปญทั้งหมด (ทุกเพจ)",
-                setTitle: "ตั้งค่าบัญชีส่วนตัว (Settings & Token)", setSubtitle: "ใส่ Facebook Access Token เพื่อให้ระบบจัดการแอดได้", setTokenDesc: "Token ของคุณจะถูกเก็บไว้ในบัญชีส่วนตัว (ไม่ปะปนกับพนักงานคนอื่น)", btnSaveToken: "บันทึก Token"
-            }
-        };
+        // -------------------------------------------------------------
+        // ระบบฟังก์ชันของหน้าต่าง UI ทั้งหมดถูกนำมาผูกกับ window. 100%
+        // เพื่อให้ไฟล์ HTML ที่เป็น Module เรียกใช้งานได้อย่างถูกต้อง
+        // -------------------------------------------------------------
 
         window.setAuthMode = function(mode) {
             const btnLogin = document.getElementById('tabLogin');
@@ -937,7 +887,6 @@
 
                 if(found) {
                     loggedInEmployee = found;
-                    // จำการล็อกอินด้วย LocalStorage
                     localStorage.setItem('adspro_emp_id', found.id);
                     
                     window.showToast("เข้าสู่ระบบสำเร็จ!");
@@ -1026,12 +975,11 @@
         };
 
         let autoBotTimer = null;
-        let isBotActiveState = false; // เก็บสถานะแบบเด็ดขาด
+        let isBotActiveState = false; 
 
         window.syncBotUI = function() {
             if(!loggedInEmployee) return;
 
-            // 1. อ่านค่าจาก LocalStorage
             let localActive = localStorage.getItem(`bot_active_${loggedInEmployee.id}`);
             if (localActive !== null) {
                 isBotActiveState = (localActive === 'true');
@@ -1041,13 +989,11 @@
             if (isNaN(mins)) mins = 15;
             document.getElementById('autoBotInterval').value = mins;
 
-            // 2. จัดการหน้าต่าง UI และ ปุ่ม
             const statusText = document.getElementById('botStatusText');
             const btnToggle = document.getElementById('btnToggleBot');
 
             if (isBotActiveState) {
                 if(!loggedInEmployee.fb_token) {
-                    // ถ้าพยายามเปิดแต่ไม่มี Token
                     isBotActiveState = false;
                     localStorage.setItem(`bot_active_${loggedInEmployee.id}`, 'false');
                     statusText.innerHTML = `สถานะ: <span class="text-red-500 font-bold">🔴 ระบบหยุดชะงัก! (กรุณาตั้งค่า Token ก่อน)</span>`;
@@ -1081,35 +1027,28 @@
         window.toggleAutoBotAction = function() {
             if (!loggedInEmployee) return;
 
-            // สลับสถานะปัจจุบัน
             isBotActiveState = !isBotActiveState;
             const mins = parseInt(document.getElementById('autoBotInterval').value) || 15;
 
-            // ถ้าจะเปิดบอท แต่ไม่มี Token
             if (isBotActiveState && (!loggedInEmployee.fb_token || loggedInEmployee.fb_token.trim() === '')) {
-                isBotActiveState = false; // บังคับปิด
+                isBotActiveState = false;
                 window.showToast("⚠️ ระบบมีปัญหา: กรุณาตั้งค่า Facebook Token ก่อนใช้งานบอท");
                 window.syncBotUI();
                 return;
             }
 
-            // บันทึกลง Local Storage ทันที
             localStorage.setItem(`bot_active_${loggedInEmployee.id}`, isBotActiveState ? 'true' : 'false');
             localStorage.setItem(`bot_interval_${loggedInEmployee.id}`, mins);
 
-            // เคลียร์ Timer เดิมทิ้งเพื่อรีเซ็ต
             if (autoBotTimer) {
                 clearInterval(autoBotTimer);
                 autoBotTimer = null;
             }
 
-            // เรียกจัดการ UI
             window.syncBotUI();
 
-            // แจ้งเตือนการทำงาน
             if (isBotActiveState) {
                 window.showToast(`🤖 บอททำงาน! สแกนทุก ${mins} นาที (โปรดเปิดหน้านี้ทิ้งไว้)`);
-                // รัน 1 รอบทันที
                 window.syncData(true).then(() => window.runAutomatedRules(true));
             } else {
                 window.showToast("ปิดบอทอัตโนมัติแล้ว");
@@ -1121,7 +1060,6 @@
             const mins = parseInt(document.getElementById('autoBotInterval').value) || 15;
             localStorage.setItem(`bot_interval_${loggedInEmployee.id}`, mins);
             
-            // ถ้าบอทเปิดอยู่ ให้เริ่ม Timer ใหม่ตามเวลาที่เปลี่ยน
             if (isBotActiveState) {
                 if (autoBotTimer) {
                     clearInterval(autoBotTimer);
@@ -1166,7 +1104,6 @@
             window.renderFolderTabs();
             window.renderFolderContent();
 
-            // 🚀 เรียกยิง UI ของบอทเมื่อโหลดหน้า (รับประกันว่าจำค่า 100%)
             window.syncBotUI();
 
             const ctx = document.getElementById('spendChart').getContext('2d');
@@ -1506,7 +1443,6 @@
                 }
                 window.populateABDropdowns();
                 window.populateCreativeDropdown(); 
-                
                 const tbody = document.getElementById('campaignTableBody');
                 tbody.innerHTML = ''; 
                 let chartItems = [];
@@ -1586,10 +1522,10 @@
                         tr.className = "border-b border-gray-100 hover:bg-gray-50";
                         tr.innerHTML = `
                             <td class="p-3 text-center">
-                                <div class="relative inline-block w-10 align-middle select-none transition duration-200 ease-in">
-                                    <input type="checkbox" id="toggle_c${index}" ${isActive ? 'checked' : ''} onchange="window.toggleRealCampaign('${camp.id}', this.checked)" class="toggle-checkbox absolute block w-5 h-5 rounded-full bg-white border-4 appearance-none cursor-pointer"/>
-                                    <label for="toggle_c${index}" class="toggle-label block overflow-hidden h-5 rounded-full bg-gray-300 cursor-pointer"></label>
-                                </div>
+                                <label class="relative inline-flex items-center cursor-pointer">
+                                  <input type="checkbox" id="toggle_c${index}" ${isActive ? 'checked' : ''} onchange="window.toggleRealCampaign('${camp.id}', this.checked)" class="sr-only peer">
+                                  <div class="w-11 h-6 bg-gray-300 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-fb-blue shadow-sm"></div>
+                                </label>
                             </td>
                             <td class="p-3 text-center">${aiBadgeHtml}</td>
                             <td class="p-3 font-semibold ${isActive ? 'text-fb-blue' : 'text-gray-500'} max-w-[200px]" title="${camp.name}">
@@ -1758,9 +1694,10 @@
                 const adSpendPct = convVal > 0 ? (spend / convVal) * 100 : 0;
                 const closingRate = msgs > 0 ? (purchases / msgs) * 100 : 0;
                 let imageUrl = 'https://placehold.co/400x300/1f2937/64748b?text=Ad+Creative';
+                const adDataObj = creativesData[adId];
                 let isVideo = false;
-                if (creativesData[adId] && creativesData[adId].creative) {
-                    const cr = creativesData[adId].creative;
+                if (adDataObj && adDataObj.creative) {
+                    const cr = adDataObj.creative;
                     let bestImage = null;
                     const storyId = cr.effective_object_story_id;
                     if (storyId && storiesData[storyId]) {
