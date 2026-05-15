@@ -2149,63 +2149,56 @@
             const actionVal = ruleData ? ruleData.actionVal : '';
             
             let conditionsHtml = '';
-            if(ruleData && ruleData.conditions && ruleData.conditions.length > 0) {
-                ruleData.conditions.forEach((cond, idx) => {
-                    const logicOp = cond.logic || 'and';
-                    const andHtml = idx > 0 ? `
-                        <div class="pl-4 border-l-2 border-gray-300 ml-4 py-1 mb-3 condition-separator">
-                            <select class="logic-operator text-xs font-bold text-gray-700 bg-gray-100 border border-gray-300 rounded px-2 py-1 outline-none">
-                                <option value="and" ${logicOp === 'and' ? 'selected' : ''}>และ (AND)</option>
-                                <option value="or" ${logicOp === 'or' ? 'selected' : ''}>หรือ (OR)</option>
-                            </select>
-                        </div>` : '';
-                    conditionsHtml += `
-                        <div class="condition-row w-full">
-                            ${andHtml}
-                            <div class="condition-item flex items-center gap-3 w-full">
-                                <select class="w-1/3 border border-gray-300 rounded-lg p-2.5 outline-none">
-                                    <option value="cost_per_purchase" ${cond.metric === 'cost_per_purchase' ? 'selected' : ''}>Cost per Purchase (ต้นทุนซื้อ)</option>
-                                    <option value="cost_per_msg" ${cond.metric === 'cost_per_msg' ? 'selected' : ''}>Cost per Message (ต้นทุนทัก)</option>
-                                    <option value="roas" ${cond.metric === 'roas' ? 'selected' : ''}>ROAS</option>
-                                    <option value="messages" ${cond.metric === 'messages' ? 'selected' : ''}>จำนวนทัก (Messages)</option>
-                                    <option value="purchases" ${cond.metric === 'purchases' ? 'selected' : ''}>จำนวนการซื้อ (Purchases)</option>
-                                    <option value="spend" ${cond.metric === 'spend' ? 'selected' : ''}>Spend (ยอดใช้จ่าย)</option>
-                                    <option value="ctr" ${cond.metric === 'ctr' ? 'selected' : ''}>CTR</option>
-                                    <option value="cpm" ${cond.metric === 'cpm' ? 'selected' : ''}>CPM</option>
-                                </select>
-                                <select class="w-1/4 border border-gray-300 rounded-lg p-2.5 outline-none">
-                                    <option value=">" ${cond.operator === '>' ? 'selected' : ''}>มากกว่า (>)</option>
-                                    <option value="<" ${cond.operator === '<' ? 'selected' : ''}>น้อยกว่า (<)</option>
-                                </select>
-                                <input type="number" value="${cond.value}" placeholder="e.g. 500" class="w-1/4 border border-gray-300 rounded-lg p-2.5 outline-none">
-                                <button onclick="window.removeCondition(this)" class="text-red-500 hover:bg-red-50 p-2 rounded shrink-0"><i class="fa-solid fa-trash"></i></button>
-                            </div>
-                        </div>
-                    `;
-                });
-            } else {
-                conditionsHtml = `
+            const renderCond = (cond, idx) => {
+                const logicOp = cond.logic || 'and';
+                const tf = cond.timeframe || 'today';
+                const andHtml = idx > 0 ? `
+                    <div class="pl-4 border-l-2 border-gray-300 ml-4 py-1 mb-2 condition-separator">
+                        <select class="logic-operator text-xs font-bold text-gray-700 bg-gray-100 border border-gray-300 rounded px-2 py-1 outline-none">
+                            <option value="and" ${logicOp === 'and' ? 'selected' : ''}>และ (AND)</option>
+                            <option value="or" ${logicOp === 'or' ? 'selected' : ''}>หรือ (OR)</option>
+                        </select>
+                    </div>` : '';
+                return `
                     <div class="condition-row w-full">
-                        <div class="condition-item flex items-center gap-3 w-full">
-                            <select class="w-1/3 border border-gray-300 rounded-lg p-2.5 outline-none">
-                                <option value="cost_per_purchase">Cost per Purchase (ต้นทุนซื้อ)</option>
-                                <option value="cost_per_msg">Cost per Message (ต้นทุนทัก)</option>
-                                <option value="roas">ROAS</option>
-                                <option value="messages">จำนวนทัก (Messages)</option>
-                                <option value="purchases">จำนวนการซื้อ (Purchases)</option>
-                                <option value="spend">Spend (ยอดใช้จ่าย)</option>
-                                <option value="ctr">CTR</option>
-                                <option value="cpm">CPM</option>
+                        ${andHtml}
+                        <div class="condition-item flex flex-wrap items-center gap-2 w-full bg-gray-50 p-2.5 rounded-lg border border-gray-200 shadow-sm">
+                            <select class="metric-select flex-1 min-w-[140px] border border-gray-300 rounded-md p-2 outline-none text-sm font-bold text-fb-dark">
+                                <option value="spend" ${cond.metric === 'spend' ? 'selected' : ''}>Spend (ยอดใช้จ่าย)</option>
+                                <option value="cost_per_purchase" ${cond.metric === 'cost_per_purchase' ? 'selected' : ''}>Cost per Purchase (ต้นทุนซื้อ)</option>
+                                <option value="cost_per_msg" ${cond.metric === 'cost_per_msg' ? 'selected' : ''}>Cost per Message (ต้นทุนทัก)</option>
+                                <option value="roas" ${cond.metric === 'roas' ? 'selected' : ''}>ROAS</option>
+                                <option value="purchases" ${cond.metric === 'purchases' ? 'selected' : ''}>จำนวนการซื้อ (Purchases)</option>
+                                <option value="messages" ${cond.metric === 'messages' ? 'selected' : ''}>จำนวนทัก (Messages)</option>
+                                <option value="ctr" ${cond.metric === 'ctr' ? 'selected' : ''}>CTR (%)</option>
+                                <option value="cpm" ${cond.metric === 'cpm' ? 'selected' : ''}>CPM</option>
                             </select>
-                            <select class="w-1/4 border border-gray-300 rounded-lg p-2.5 outline-none">
-                                <option value=">">มากกว่า (>)</option>
-                                <option value="<">น้อยกว่า (<)</option>
+                            <span class="text-xs text-gray-500 font-bold bg-white px-2 py-1 rounded border border-gray-200 shadow-sm">ของ</span>
+                            <select class="timeframe-select w-28 border border-gray-300 rounded-md p-2 outline-none text-sm text-fb-blue font-bold bg-blue-50">
+                                <option value="today" ${tf === 'today' ? 'selected' : ''}>วันนี้</option>
+                                <option value="yesterday" ${tf === 'yesterday' ? 'selected' : ''}>เมื่อวาน</option>
+                                <option value="last_3d" ${tf === 'last_3d' ? 'selected' : ''}>3 วันล่าสุด</option>
+                                <option value="last_7d" ${tf === 'last_7d' ? 'selected' : ''}>7 วันล่าสุด</option>
+                                <option value="lifetime" ${tf === 'lifetime' ? 'selected' : ''}>ทั้งหมด</option>
                             </select>
-                            <input type="number" placeholder="e.g. 500" class="w-1/4 border border-gray-300 rounded-lg p-2.5 outline-none">
-                            <button onclick="window.removeCondition(this)" class="text-red-500 hover:bg-red-50 p-2 rounded shrink-0"><i class="fa-solid fa-trash"></i></button>
+                            <select class="operator-select w-24 border border-gray-300 rounded-md p-2 outline-none text-sm font-bold text-gray-700">
+                                <option value=">" ${cond.operator === '>' ? 'selected' : ''}>มากกว่า (>)</option>
+                                <option value="<" ${cond.operator === '<' ? 'selected' : ''}>น้อยกว่า (<)</option>
+                                <option value="==" ${cond.operator === '==' ? 'selected' : ''}>เท่ากับ (==)</option>
+                            </select>
+                            <input type="number" value="${cond.value !== undefined ? cond.value : ''}" placeholder="ระบุค่า" class="val-input w-24 border border-gray-300 rounded-md p-2 outline-none text-sm text-center font-bold">
+                            <button onclick="window.removeCondition(this)" class="text-red-400 hover:text-white hover:bg-red-500 w-8 h-8 rounded-md shrink-0 transition flex items-center justify-center border border-red-200 bg-white"><i class="fa-solid fa-trash"></i></button>
                         </div>
                     </div>
                 `;
+            };
+
+            if(ruleData && ruleData.conditions && ruleData.conditions.length > 0) {
+                ruleData.conditions.forEach((cond, idx) => {
+                    conditionsHtml += renderCond(cond, idx);
+                });
+            } else {
+                conditionsHtml = renderCond({ metric: 'cost_per_purchase', timeframe: 'today', operator: '>', value: '' }, 0);
             }
 
             div.innerHTML = `
@@ -2214,10 +2207,10 @@
                     <label class="block text-sm font-bold text-gray-700 mb-2" data-i18n="ruleName">ชื่อกฎ (Rule Name)</label>
                     <input type="text" value="${name}" placeholder="e.g. Stop losing money ads" class="rule-name-input w-full border border-gray-300 rounded-lg p-3 outline-none focus:border-fb-blue focus:ring-1 focus:ring-fb-blue font-bold text-fb-dark">
                 </div>
-                <div class="mb-6 bg-gray-50 p-4 rounded-lg border border-gray-200">
-                    <label class="block text-sm font-bold text-gray-700 mb-2" data-i18n="ruleAction">การดำเนินการ (Action to take)</label>
+                <div class="mb-6 bg-indigo-50/50 p-4 rounded-lg border border-indigo-100">
+                    <label class="block text-sm font-bold text-indigo-900 mb-2" data-i18n="ruleAction">การดำเนินการ (Action to take)</label>
                     <div class="flex gap-4 items-center">
-                        <select onchange="window.toggleActionInputs(this)" class="action-select w-1/3 border border-gray-300 rounded-lg p-2.5 font-bold text-fb-dark outline-none">
+                        <select onchange="window.toggleActionInputs(this)" class="action-select w-1/3 border border-indigo-300 rounded-lg p-2.5 font-bold text-indigo-900 outline-none shadow-sm">
                             <option value="pause" ${action === 'pause' ? 'selected' : ''}>ปิดแคมเปญ (Pause)</option>
                             <option value="activate" ${action === 'activate' ? 'selected' : ''}>เปิดแคมเปญ (Activate)</option>
                             <option value="inc_budget" ${action === 'inc_budget' ? 'selected' : ''}>เพิ่มงบประมาณ (%)</option>
@@ -2236,11 +2229,11 @@
                     </div>
                 </div>
                 <div class="mb-2">
-                    <label class="block text-sm font-bold text-gray-700 mb-2" data-i18n="ruleCond">เมื่อเงื่อนไขเหล่านี้เป็นจริง (Conditions)</label>
-                    <div class="conditions-container space-y-3">
+                    <label class="block text-sm font-bold text-gray-700 mb-2" data-i18n="ruleCond">เมื่อเงื่อนไขเหล่านี้เป็นจริงทั้งหมด (Nested Conditions)</label>
+                    <div class="conditions-container space-y-2">
                         ${conditionsHtml}
                     </div>
-                    <button onclick="window.addCondition(this)" class="mt-4 text-fb-blue font-bold text-sm hover:underline"><i class="fa-solid fa-plus mr-1"></i> <span data-i18n="ruleAddCond">เพิ่มเงื่อนไข</span></button>
+                    <button onclick="window.addCondition(this)" class="mt-4 text-fb-blue font-bold text-sm hover:underline flex items-center px-3 py-1.5 bg-blue-50 rounded border border-blue-100"><i class="fa-solid fa-plus mr-1.5"></i> <span data-i18n="ruleAddCond">เพิ่มเงื่อนไขเชื่อมต่อ (AND/OR)</span></button>
                 </div>
             `;
             container.appendChild(div);
@@ -2277,9 +2270,9 @@
             const ruleCard = btn.closest('.rule-card');
             const container = ruleCard.querySelector('.conditions-container');
             const div = document.createElement('div');
-            div.className = 'condition-row w-full mt-3';
+            div.className = 'condition-row w-full mt-2';
             const andHtml = container.children.length > 0 ? `
-                <div class="pl-4 border-l-2 border-gray-300 ml-4 py-1 mb-3 condition-separator">
+                <div class="pl-4 border-l-2 border-gray-300 ml-4 py-1 mb-2 condition-separator">
                     <select class="logic-operator text-xs font-bold text-gray-700 bg-gray-100 border border-gray-300 rounded px-2 py-1 outline-none">
                         <option value="and">และ (AND)</option>
                         <option value="or">หรือ (OR)</option>
@@ -2287,23 +2280,32 @@
                 </div>` : '';
             div.innerHTML = `
                 ${andHtml}
-                <div class="condition-item flex items-center gap-3 w-full">
-                    <select class="w-1/3 border border-gray-300 rounded-lg p-2.5 outline-none">
+                <div class="condition-item flex flex-wrap items-center gap-2 w-full bg-gray-50 p-2.5 rounded-lg border border-gray-200 shadow-sm">
+                    <select class="metric-select flex-1 min-w-[140px] border border-gray-300 rounded-md p-2 outline-none text-sm font-bold text-fb-dark">
                         <option value="cost_per_purchase">Cost per Purchase (ต้นทุนซื้อ)</option>
                         <option value="cost_per_msg">Cost per Message (ต้นทุนทัก)</option>
                         <option value="roas">ROAS</option>
                         <option value="messages">จำนวนทัก (Messages)</option>
                         <option value="purchases">จำนวนการซื้อ (Purchases)</option>
                         <option value="spend">Spend (ยอดใช้จ่าย)</option>
-                        <option value="ctr">CTR</option>
+                        <option value="ctr">CTR (%)</option>
                         <option value="cpm">CPM</option>
                     </select>
-                    <select class="w-1/4 border border-gray-300 rounded-lg p-2.5 outline-none">
+                    <span class="text-xs text-gray-500 font-bold bg-white px-2 py-1 rounded border border-gray-200 shadow-sm">ของ</span>
+                    <select class="timeframe-select w-28 border border-gray-300 rounded-md p-2 outline-none text-sm text-fb-blue font-bold bg-blue-50">
+                        <option value="today">วันนี้</option>
+                        <option value="yesterday">เมื่อวาน</option>
+                        <option value="last_3d">3 วันล่าสุด</option>
+                        <option value="last_7d">7 วันล่าสุด</option>
+                        <option value="lifetime">ทั้งหมด</option>
+                    </select>
+                    <select class="operator-select w-24 border border-gray-300 rounded-md p-2 outline-none text-sm font-bold text-gray-700">
                         <option value=">">มากกว่า (>)</option>
                         <option value="<">น้อยกว่า (<)</option>
+                        <option value="==">เท่ากับ (==)</option>
                     </select>
-                    <input type="number" placeholder="e.g. 500" class="w-1/4 border border-gray-300 rounded-lg p-2.5 outline-none">
-                    <button onclick="window.removeCondition(this)" class="text-red-500 hover:bg-red-50 p-2 rounded shrink-0"><i class="fa-solid fa-trash"></i></button>
+                    <input type="number" placeholder="ระบุค่า" class="val-input w-24 border border-gray-300 rounded-md p-2 outline-none text-sm text-center font-bold">
+                    <button onclick="window.removeCondition(this)" class="text-red-400 hover:text-white hover:bg-red-500 w-8 h-8 rounded-md shrink-0 transition flex items-center justify-center border border-red-200 bg-white"><i class="fa-solid fa-trash"></i></button>
                 </div>
             `;
             container.appendChild(div);
@@ -2335,28 +2337,21 @@
                     
                     const item = row.querySelector('.condition-item');
                     if(item) {
-                        const selects = item.querySelectorAll('select');
-                        const valInput = item.querySelector('input[type="number"]');
-                        if(selects.length >= 2 && valInput && valInput.value !== '') {
+                        const metricSel = item.querySelector('.metric-select');
+                        const timeframeSel = item.querySelector('.timeframe-select');
+                        const operatorSel = item.querySelector('.operator-select');
+                        const valInput = item.querySelector('.val-input');
+                        if(metricSel && timeframeSel && operatorSel && valInput && valInput.value !== '') {
                             conditions.push({
                                 logic: logic,
-                                metric: selects[0].value,
-                                operator: selects[1].value,
+                                metric: metricSel.value,
+                                timeframe: timeframeSel.value,
+                                operator: operatorSel.value,
                                 value: parseFloat(valInput.value)
                             });
                         }
                     }
                 });
-
-                if (conditions.length === 0) {
-                    card.querySelectorAll('.condition-item').forEach(item => {
-                        const selects = item.querySelectorAll('select');
-                        const valInput = item.querySelector('input[type="number"]');
-                        if(selects.length >= 2 && valInput && valInput.value !== '') {
-                            conditions.push({ logic: 'and', metric: selects[0].value, operator: selects[1].value, value: parseFloat(valInput.value) });
-                        }
-                    });
-                }
 
                 if(name && conditions.length > 0) {
                     rules.push({ name, action, actionVal, conditions });
@@ -2382,8 +2377,11 @@
                 return;
             }
 
-            if(!silent) window.showToast("กำลังประมวลผลกฎทั้งหมด...");
+            if(!silent) window.showToast("กำลังประมวลผลกฎขั้นสูง... อาจใช้เวลาสักครู่ในการดึงข้อมูลย้อนหลัง");
             let triggeredCount = 0;
+            
+            // Cache data from specific timeframes to reduce API load
+            const insightCache = {};
 
             for (let folder of window.ruleFolders) {
                 if (!folder.rules || folder.rules.length === 0) continue;
@@ -2406,24 +2404,54 @@
 
                         let ruleResult = null;
 
-                        rule.conditions.forEach((cond, idx) => {
+                        // Evaluate conditions for this campaign
+                        for (let idx = 0; idx < rule.conditions.length; idx++) {
+                            const cond = rule.conditions[idx];
                             const metric = cond.metric;
                             const operator = cond.operator;
                             const val = parseFloat(cond.value) || 0;
+                            const timeframe = cond.timeframe || currentDatePreset; // Fallback
 
+                            let insightData = null;
+                            
+                            // Optimization: If the required timeframe is the same as the current global view, reuse the data
+                            if (timeframe === currentDatePreset) {
+                                insightData = (camp.insights && camp.insights.data && camp.insights.data.length > 0) ? camp.insights.data[0] : {};
+                            } else {
+                                // Must fetch specific timeframe for this condition
+                                const cacheKey = `${camp.id}_${timeframe}`;
+                                if (!insightCache[cacheKey]) {
+                                    try {
+                                        const url = `https://graph.facebook.com/v21.0/${camp.id}/insights?fields=spend,actions,action_values,ctr,cpm&date_preset=${timeframe}&use_account_attribution_setting=true&access_token=${loggedInEmployee.fb_token}`;
+                                        const res = await window.fetchFB(url);
+                                        insightCache[cacheKey] = (res.data && res.data.length > 0) ? res.data[0] : {};
+                                    } catch(e) {
+                                        insightCache[cacheKey] = {};
+                                    }
+                                }
+                                insightData = insightCache[cacheKey];
+                            }
+
+                            // Extract metrics
+                            const spendNum = parseFloat(insightData.spend || 0);
+                            const purchases = parseInt(window.getFbActionVal(insightData.actions, purTypesList));
+                            const msgs = parseInt(window.getFbActionVal(insightData.actions, msgTypesList));
+                            const convVal = window.getFbActionVal(insightData.action_values, purTypesList);
+                            
                             let campVal = 0;
-                            if (metric === 'spend') campVal = camp.spendNum || 0;
-                            if (metric === 'purchases') campVal = camp.purchases || 0;
-                            if (metric === 'messages') campVal = camp.msgsNum || 0;
-                            if (metric === 'roas') campVal = camp.roasNum || 0;
-                            if (metric === 'cost_per_purchase') campVal = camp.costPurNum || 0;
-                            if (metric === 'cost_per_msg') campVal = camp.costMsgNum || 0;
-                            if (metric === 'ctr') campVal = camp.ctrNum || 0;
-                            if (metric === 'cpm') campVal = camp.cpmNum || 0;
+                            if (metric === 'spend') campVal = spendNum;
+                            else if (metric === 'purchases') campVal = purchases;
+                            else if (metric === 'messages') campVal = msgs;
+                            else if (metric === 'roas') campVal = spendNum > 0 ? convVal / spendNum : 0;
+                            else if (metric === 'cost_per_purchase') campVal = purchases > 0 ? spendNum / purchases : 0;
+                            else if (metric === 'cost_per_msg') campVal = msgs > 0 ? spendNum / msgs : 0;
+                            else if (metric === 'ctr') campVal = parseFloat(insightData.ctr || 0);
+                            else if (metric === 'cpm') campVal = parseFloat(insightData.cpm || 0);
 
                             let isCondTrue = false;
                             if (operator === '>') isCondTrue = campVal > val;
                             else if (operator === '<') isCondTrue = campVal < val;
+                            else if (operator === '==') isCondTrue = campVal === val;
 
                             if (idx === 0) {
                                 ruleResult = isCondTrue;
@@ -2434,8 +2462,9 @@
                                     ruleResult = ruleResult && isCondTrue;
                                 }
                             }
-                        });
+                        }
 
+                        // Apply action if rule passes
                         if (ruleResult) {
                             triggeredCount++;
                             if (action === 'activate') {
@@ -2453,11 +2482,11 @@
                                         const pct = parseFloat(rule.actionVal) || 0;
                                         newBudget = currentBudget - (currentBudget * (pct / 100));
                                     } else if (action === 'reset_budget') {
-                                        const val = parseFloat(rule.actionVal) || 0;
-                                        newBudget = val * 100;
+                                        const targetVal = parseFloat(rule.actionVal) || 0;
+                                        newBudget = targetVal * 100; // Facebook API requires budget in cents (e.g., THB * 100)
                                     }
                                     
-                                    if (newBudget !== currentBudget) {
+                                    if (Math.floor(newBudget) !== Math.floor(currentBudget)) {
                                         await fetch(`https://graph.facebook.com/v21.0/${camp.id}?access_token=${loggedInEmployee.fb_token}`, {
                                             method: 'POST',
                                             headers: { 'Content-Type': 'application/json' },
@@ -2469,43 +2498,14 @@
                         }
                     }
                 }
-            }
 
-            if (triggeredCount > 0) {
-                window.showToast(`🤖 บอททำงานสำเร็จ! มีการอัปเดตไป ${triggeredCount} แคมเปญ`);
-                setTimeout(() => window.syncData(true), 2500);
-            } else {
-                if(!silent) window.showToast("ตรวจสอบแล้ว ไม่มีแคมเปญใดเข้าเงื่อนไข");
-            }
-        };
-
-        window.saveRules = async function(btn) {
-            if(!loggedInEmployee) return window.showToast("กรุณาเข้าสู่ระบบก่อน");
-            
-            window.readRulesFromDOM();
-
-            const origHtml = btn.innerHTML;
-            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i> กำลังบันทึก...';
-            btn.disabled = true;
-
-            try {
-                loggedInEmployee.rule_folders = window.ruleFolders;
-                await dbService.updateEmployee(loggedInEmployee.id, { rule_folders: window.ruleFolders });
-                window.showToast(currentLang === 'th' ? 'บันทึกโฟลเดอร์และกฎลง Cloud สำเร็จ!' : 'Folders & Rules saved to Cloud!');
-            } catch(e) {
-                console.error(e);
-                window.showToast("เกิดข้อผิดพลาดในการบันทึก");
-            } finally {
-                btn.innerHTML = origHtml;
-                btn.disabled = false;
-            }
-        };
-
-        window.calculateBreakeven = function() {
-            const price = parseFloat(document.getElementById('bePrice').value) || 0;
-            const cost = parseFloat(document.getElementById('beCost').value) || 0;
-            const shipping = parseFloat(document.getElementById('beShipping').value) || 0;
-            const cod = parseFloat(document.getElementById('beCOD').value) || 0;
+                if (triggeredCount > 0) {
+                    window.showToast(`🤖 บอททำงานสำเร็จ! มีการอัปเดตไป ${triggeredCount} แคมเปญ`);
+                    setTimeout(() => window.syncData(true), 2500);
+                } else {
+                    if(!silent) window.showToast("ตรวจสอบแล้ว ไม่มีแคมเปญใดเข้าเงื่อนไข");
+                }
+            };
             const other = parseFloat(document.getElementById('beOther').value) || 0;
             const adsCost = parseFloat(document.getElementById('beAdsCost').value) || 0;
             if (price === 0) return window.showToast("กรุณาใส่ราคาขายเพื่อคำนวณ");
