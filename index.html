@@ -422,7 +422,7 @@
                                 <i class="fa-solid fa-robot"></i>
                             </div>
                             <div>
-                                <h3 class="font-black text-indigo-900 text-base">ระบบบอทอัตโนมัติ (Auto-Bot)</h3>
+                                <h3 class="font-bold text-indigo-900 text-base">ระบบบอทอัตโนมัติ (Auto-Bot)</h3>
                                 <p class="text-xs font-medium mt-0.5" id="botStatusText"><span class="text-gray-500 font-bold">🔴 ปิดการทำงาน</span> (จะรันทุกโฟลเดอร์เมื่อเปิด)</p>
                             </div>
                         </div>
@@ -801,6 +801,12 @@
         const purTypesList = ['purchase', 'omni_purchase', 'offsite_conversion.fb_pixel_purchase'];
         const msgTypesList = ['onsite_conversion.messaging_conversation_started_7d', 'onsite_conversion.messaging_first_reply', 'messages'];
 
+        // ป้องกัน Error หากไม่มีตัวแปลภาษา
+        const translations = {
+            th: new Proxy({}, { get: (target, name) => target[name] || '' }),
+            en: new Proxy({}, { get: (target, name) => target[name] || '' })
+        };
+
         const dbService = {
             getEmployees: async () => {
                 try {
@@ -832,6 +838,103 @@
             return 'id_' + Date.now() + '_' + Math.floor(Math.random() * 1000000);
         }
 
+        // --- ฟังก์ชันที่ขาดหายไปสำหรับการจัดการ Ad Account ---
+        window.addAdAccountInput = function(value = '') {
+            const container = document.getElementById('adAccountsContainer');
+            const div = document.createElement('div');
+            div.className = 'flex items-center gap-2 mb-2 animate-fade-in';
+            div.innerHTML = `
+                <div class="relative flex-1">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <i class="fa-solid fa-briefcase text-gray-400"></i>
+                    </div>
+                    <input type="text" value="${value}" placeholder="act_1234567890" class="ad-account-input w-full border border-gray-300 rounded-lg py-2.5 pl-10 pr-3 outline-none focus:border-fb-blue focus:ring-1 focus:ring-fb-blue font-mono text-sm bg-gray-50 focus:bg-white transition-colors">
+                </div>
+                <button onclick="window.removeAdAccountInput(this)" class="text-red-400 hover:text-red-600 hover:bg-red-50 p-2.5 rounded-lg transition shrink-0" title="ลบบัญชีนี้">
+                    <i class="fa-solid fa-trash-can"></i>
+                </button>
+            `;
+            container.appendChild(div);
+        };
+
+        window.removeAdAccountInput = function(btn) {
+            const container = document.getElementById('adAccountsContainer');
+            if (container.querySelectorAll('.ad-account-input').length > 1) {
+                btn.closest('div.flex').remove();
+            } else {
+                window.showToast("ต้องมีอย่างน้อย 1 บัญชีโฆษณา");
+                btn.closest('div.flex').querySelector('input').value = '';
+            }
+        };
+
+        window.updateAdAccountDropdown = function() {
+            const selector = document.getElementById('adAccountSelector');
+            if (!selector) return;
+            selector.innerHTML = '';
+            if (loggedInEmployee && loggedInEmployee.fb_ad_accounts && loggedInEmployee.fb_ad_accounts.length > 0) {
+                loggedInEmployee.fb_ad_accounts.forEach(acc => {
+                    const opt = document.createElement('option');
+                    opt.value = acc;
+                    opt.text = acc;
+                    selector.appendChild(opt);
+                });
+            } else {
+                selector.innerHTML = '<option value="">-- รอการตั้งค่า --</option>';
+            }
+        };
+
+        window.saveToken = async function() {
+            if (!loggedInEmployee) return window.showToast("กรุณาเข้าสู่ระบบก่อน");
+
+            const token = document.getElementById('fbTokenInput').value.trim();
+            const accountInputs = document.querySelectorAll('.ad-account-input');
+            const accounts = [];
+
+            accountInputs.forEach(input => {
+                const val = input.value.trim();
+                if (val) {
+                    // สร้าง Format act_ ให้อัตโนมัติถ้าไม่ได้ใส่มา
+                    const formattedVal = val.startsWith('act_') ? val : 'act_' + val;
+                    if(!accounts.includes(formattedVal)) accounts.push(formattedVal);
+                }
+            });
+
+            if (!token) return window.showToast("กรุณาใส่ Facebook Access Token");
+            if (accounts.length === 0) return window.showToast("กรุณาใส่ Ad Account ID อย่างน้อย 1 บัญชี");
+
+            const btn = document.querySelector('button[onclick="window.saveToken()"]');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i> กำลังบันทึก...';
+            btn.disabled = true;
+
+            try {
+                // บันทึกข้อมูลลง Firestore
+                loggedInEmployee.fb_token = token;
+                loggedInEmployee.fb_ad_accounts = accounts;
+
+                await dbService.updateEmployee(loggedInEmployee.id, {
+                    fb_token: token,
+                    fb_ad_accounts: accounts
+                });
+
+                window.updateAdAccountDropdown();
+                window.showToast("บันทึกข้อมูลการเชื่อมต่อสำเร็จ!");
+                
+                // สั่งให้ดึงข้อมูลใหม่ทันที
+                setTimeout(() => {
+                    window.syncData();
+                }, 1000);
+
+            } catch (e) {
+                console.error("Save token error:", e);
+                window.showToast("เกิดข้อผิดพลาดในการบันทึกข้อมูล");
+            } finally {
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            }
+        };
+        // -------------------------------------------------------------
+
         document.addEventListener('DOMContentLoaded', async () => {
             try {
                 // Auto-Login: เช็ค LocalStorage ทันทีที่โหลด
@@ -860,11 +963,6 @@
                 document.getElementById('authScreen').classList.remove('hidden');
             }
         });
-
-        // -------------------------------------------------------------
-        // ระบบฟังก์ชันของหน้าต่าง UI ทั้งหมดถูกนำมาผูกกับ window. 100%
-        // เพื่อให้ไฟล์ HTML ที่เป็น Module เรียกใช้งานได้อย่างถูกต้อง
-        // -------------------------------------------------------------
 
         window.setAuthMode = function(mode) {
             const btnLogin = document.getElementById('tabLogin');
@@ -1198,9 +1296,10 @@
         };
 
         window.updateTexts = function() {
+            if(typeof translations === 'undefined') return;
             document.querySelectorAll('[data-i18n]').forEach(el => {
                 const key = el.getAttribute('data-i18n');
-                if(translations[currentLang][key]) {
+                if(translations[currentLang] && translations[currentLang][key]) {
                     if (key === 'dashSubtitle') {
                         el.innerHTML = translations[currentLang][key] + '<span id="lastSyncTime">' + document.getElementById('lastSyncTime').innerText + '</span>';
                     } else {
@@ -1349,9 +1448,9 @@
             const selector = document.getElementById('adAccountSelector');
             const adAcc = selector ? selector.value : null;
             if(!token || !adAcc) {
-                window.showToast(currentLang === 'th' ? "กรุณาใส่ Token และระบุบัญชี Ad Account" : "Please set Token and Ad Account");
+                if(!silent) window.showToast(currentLang === 'th' ? "กรุณาใส่ Token และระบุบัญชี Ad Account" : "Please set Token and Ad Account");
                 icon.classList.remove('fa-spin');
-                window.switchTab('settings');
+                if(!silent) window.switchTab('settings');
                 return;
             }
             const formattedAdAcc = adAcc.startsWith('act_') ? adAcc : 'act_' + adAcc;
@@ -1622,7 +1721,6 @@
             window.showToast(`กำลัง${actionText} ${checkboxes.length} แคมเปญ...`);
             
             try {
-                // ยิงคำสั่งเปลี่ยนสถานะไปที่เฟสบุ๊คพร้อมๆ กันเพื่อให้ทำงานไวขึ้น
                 const promises = Array.from(checkboxes).map(cb => {
                     const campaignId = cb.value;
                     return fetch(`https://graph.facebook.com/v21.0/${campaignId}`, {
@@ -1635,7 +1733,6 @@
                 await Promise.all(promises);
                 window.showToast(`ดำเนินการ${actionText}แคมเปญสำเร็จ!`);
                 
-                // ล้างค่าที่เลือกและโหลดตารางใหม่
                 document.getElementById('selectAllCamps').checked = false;
                 window.updateCampSelectCount();
                 setTimeout(() => { window.syncData(true); }, 1500);
@@ -1699,7 +1796,6 @@
                 const spend = parseFloat(ins.spend || 0);
                 const purchases = parseInt(window.getFbActionVal(ins.actions, purTypesList));
                 const convVal = window.getFbActionVal(ins.action_values, purTypesList);
-                const costPur = purchases > 0 ? spend / purchases : 0;
                 const roas = spend > 0 ? convVal / spend : 0;
                 if (purchases > 0 && roas >= 2.0) winnerCount++;
                 else if ((spend > 400 && purchases === 0) || (roas > 0 && roas < 1.5 && spend > 300)) loserCount++;
