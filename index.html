@@ -2148,6 +2148,7 @@
             const action = ruleData ? ruleData.action : 'pause';
             const actionVal = ruleData ? ruleData.actionVal : '';
             const actionFreq = ruleData && ruleData.actionFreq ? ruleData.actionFreq : 24;
+            const actionTime = ruleData && ruleData.actionTime ? ruleData.actionTime : '00:00';
             
             let conditionsHtml = '';
             const renderCond = (cond, idx) => {
@@ -2227,10 +2228,14 @@
                                 <span class="text-xs font-bold text-gray-600">ชม.</span>
                             </div>
                         </div>
-                        <div class="action-reset-box ${action === 'reset_budget' ? 'flex' : 'hidden'} gap-2 items-center">
+                        <div class="action-reset-box ${action === 'reset_budget' ? 'flex' : 'hidden'} gap-2 items-center flex-wrap">
                             <span class="font-bold text-gray-600" data-i18n="lblTo">เป็น</span>
                             <input type="number" value="${actionVal}" placeholder="1000" class="action-reset-input w-24 border border-gray-300 rounded-lg p-2.5 text-center">
                             <span class="font-bold text-gray-600" data-i18n="lblBaht">บาท</span>
+                            <div class="pl-3 ml-2 border-l-2 border-indigo-200 flex gap-2 items-center">
+                                <span class="text-xs font-bold text-gray-600">เวลา</span>
+                                <input type="time" value="${actionTime}" class="action-time-input border border-gray-300 rounded-lg p-2 text-center shadow-sm">
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -2330,17 +2335,21 @@
                 const actionValInput = card.querySelector('.action-value-input');
                 const actionFreqInput = card.querySelector('.action-freq-input');
                 const actionResetInput = card.querySelector('.action-reset-input');
+                const actionTimeInput = card.querySelector('.action-time-input');
                 
                 const name = nameInput ? nameInput.value : '';
                 const action = actionSelect ? actionSelect.value : 'pause';
                 let actionVal = '';
                 let actionFreq = 24;
+                let actionTime = '00:00';
+                
                 if(action === 'inc_budget' || action === 'dec_budget') {
                     actionVal = actionValInput ? actionValInput.value : '';
                     actionFreq = actionFreqInput ? parseFloat(actionFreqInput.value) || 24 : 24;
                 }
                 else if(action === 'reset_budget') {
                     actionVal = actionResetInput ? actionResetInput.value : '';
+                    actionTime = actionTimeInput ? actionTimeInput.value : '00:00';
                 }
                 
                 const conditions = [];
@@ -2367,7 +2376,7 @@
                 });
 
                 if(name && conditions.length > 0) {
-                    rules.push({ name, action, actionVal, actionFreq, conditions });
+                    rules.push({ name, action, actionVal, actionFreq, actionTime, conditions });
                 }
             });
 
@@ -2494,6 +2503,22 @@
                                         canExecute = false;
                                     }
                                 }
+                            } else if (action === 'reset_budget') {
+                                const resetTime = rule.actionTime || '00:00';
+                                const [targetHour, targetMin] = resetTime.split(':').map(Number);
+                                const now = new Date();
+                                const currentHour = now.getHours();
+                                const currentMin = now.getMinutes();
+
+                                const isPastTime = (currentHour > targetHour) || (currentHour === targetHour && currentMin >= targetMin);
+
+                                const todayStr = now.getFullYear() + '-' + (now.getMonth() + 1) + '-' + now.getDate();
+                                const cacheKey = `last_exec_reset_${folder.id}_${ruleIdx}_${camp.id}_${todayStr}`;
+                                const alreadyExecutedToday = localStorage.getItem(cacheKey);
+
+                                if (!isPastTime || alreadyExecutedToday) {
+                                    canExecute = false;
+                                }
                             }
 
                             if (canExecute) {
@@ -2527,6 +2552,11 @@
                                             if (action === 'inc_budget' || action === 'dec_budget') {
                                                 const cacheKey = `last_exec_${folder.id}_${ruleIdx}_${camp.id}`;
                                                 localStorage.setItem(cacheKey, Date.now().toString());
+                                            } else if (action === 'reset_budget') {
+                                                const now = new Date();
+                                                const todayStr = now.getFullYear() + '-' + (now.getMonth() + 1) + '-' + now.getDate();
+                                                const cacheKey = `last_exec_reset_${folder.id}_${ruleIdx}_${camp.id}_${todayStr}`;
+                                                localStorage.setItem(cacheKey, 'true');
                                             }
                                         }
                                     }
