@@ -558,7 +558,7 @@
                                 <button onclick="window.clearBreakevenData()" class="px-5 py-3.5 bg-gray-100 text-gray-600 rounded-lg font-bold hover:bg-gray-200 transition-colors flex justify-center items-center gap-2">
                                     <i class="fa-solid fa-eraser"></i> <span data-i18n="btnClear">ล้างข้อมูล</span>
                                 </button>
-                                <button onclick="window.calculateBreakeven()" class="flex-1 bg-emerald-500 text-white py-3.5 rounded-lg font-bold shadow-md shadow-emerald-500/30 hover:bg-emerald-600 transition-colors flex justify-center items-center gap-2 text-base">
+                                <button onclick="window.calculateBreakeven()" class="flex-1 bg-emerald-50 text-emerald-600 py-3.5 rounded-lg font-bold hover:bg-emerald-100 transition-colors flex justify-center items-center gap-2 text-base">
                                     <i class="fa-solid fa-equals"></i> <span data-i18n="btnCalc">คำนวณจุดคุ้มทุน & กำไร</span>
                                 </button>
                             </div>
@@ -1551,8 +1551,8 @@
                     const purchases = parseInt(window.getFbActionVal(ins.actions, purTypesList));
                     const msgs = parseInt(window.getFbActionVal(ins.actions, msgTypesList));
                     const convVal = window.getFbActionVal(ins.action_values, purTypesList);
-                    const costPur = purchases > 0 ? spend / purchases : 0;
-                    const costMsg = msgs > 0 ? spend / msgs : 0;
+                    const costPur = purchases > 0 ? spend / purchases : (spend > 0 ? spend : 0);
+                    const costMsg = msgs > 0 ? spend / msgs : (spend > 0 ? spend : 0);
                     const roas = spend > 0 ? convVal / spend : 0;
                     document.getElementById('kpi-spend').innerText = '฿' + spend.toLocaleString(undefined, {minimumFractionDigits: 2});
                     document.getElementById('kpi-ctr').innerText = parseFloat(ins.ctr || 0).toFixed(2) + '%';
@@ -1660,8 +1660,8 @@
                         purchases = parseInt(window.getFbActionVal(cIns.actions, purTypesList));
                         msgs = parseInt(window.getFbActionVal(cIns.actions, msgTypesList));
                         convVal = window.getFbActionVal(cIns.action_values, purTypesList);
-                        costPur = purchases > 0 ? spendNum / purchases : 0;
-                        costMsg = msgs > 0 ? spendNum / msgs : 0;
+                        costPur = purchases > 0 ? spendNum / purchases : (spendNum > 0 ? spendNum : 0);
+                        costMsg = msgs > 0 ? spendNum / msgs : (spendNum > 0 ? spendNum : 0);
                         roas = spendNum > 0 ? convVal / spendNum : 0;
                     }
                     sumSpend += spendNum; sumReach += reach; sumImps += impressions; sumClicks += clicks;
@@ -1705,7 +1705,7 @@
                         </td>
                         <td class="p-3 text-center">
                             <label class="relative inline-flex items-center cursor-pointer">
-                              <input type="checkbox" id="toggle_c${index}" ${isActive ? 'checked' : ''} onchange="window.toggleRealCampaign('${camp.id}', this.checked)" class="sr-only peer">
+                              <input type="checkbox" id="toggle_c${index}" ${isActive ? 'checked' : ''} onchange="window.toggleRealCampaign('${camp.id}', this.checked, true)" class="sr-only peer">
                               <div class="w-11 h-6 bg-gray-300 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-fb-blue shadow-sm"></div>
                             </label>
                         </td>
@@ -1748,7 +1748,7 @@
                 const tCpm = sumImps > 0 ? (sumSpend / sumImps) * 1000 : 0;
                 const tCtr = sumImps > 0 ? (sumClicks / sumImps) * 100 : 0;
                 const tCostMsg = sumMsgs > 0 ? sumSpend / sumMsgs : 0;
-                const tCostPur = sumPurchases > 0 ? sumSpend / sumPurchases : 0;
+                const tCostPur = sumPurchases > 0 ? sumSpend / sumPurchases : (sumSpend > 0 ? sumSpend : 0);
                 const tRoas = sumSpend > 0 ? sumConvVal / sumSpend : 0;
                 const tAdSpendPct = sumConvVal > 0 ? (sumSpend / sumConvVal) * 100 : 0;
                 const tClosingRate = sumMsgs > 0 ? (sumPurchases / sumMsgs) * 100 : 0;
@@ -1892,9 +1892,20 @@
                 await Promise.all(promises);
                 window.showToast(`ดำเนินการ${actionText}แคมเปญสำเร็จ!`);
                 
+                // --- ส่วนแก้ไขใหม่ ---
+                // รีเซ็ตความจำให้บอทเริ่มประมวลผลใหม่ เมื่อสั่งเปิด/ปิดแบบจำนวนมาก
+                const now = new Date();
+                const todayStr = now.getFullYear() + '-' + (now.getMonth() + 1) + '-' + now.getDate();
+                checkboxes.forEach(cb => {
+                    const camp = globalCampaignsData.find(c => c.id === cb.value);
+                    if (camp) camp.status = status;
+                    localStorage.removeItem(`last_exec_toggle_pause_${cb.value}_${todayStr}`);
+                    localStorage.removeItem(`last_exec_toggle_activate_${cb.value}_${todayStr}`);
+                });
+                
                 document.getElementById('selectAllCamps').checked = false;
                 window.updateCampSelectCount();
-                setTimeout(() => { window.syncData(true); }, 1500);
+                window.renderCampaignTable();
                 
             } catch(err) {
                 console.error(err);
@@ -1902,7 +1913,7 @@
             }
         };
 
-        window.toggleRealCampaign = async function(campaignId, isActive) {
+        window.toggleRealCampaign = async function(campaignId, isActive, isManual = false) {
             const token = loggedInEmployee.fb_token;
             const status = isActive ? 'ACTIVE' : 'PAUSED';
             try {
@@ -1913,6 +1924,20 @@
                 });
                 const data = await res.json();
                 if (data.error) throw new Error(data.error.message);
+                
+                // --- ส่วนแก้ไขใหม่ ---
+                // ปรับปรุงสถานะบนหน้าจอทันที เพื่อให้บอททราบสถานะปัจจุบัน
+                const camp = globalCampaignsData.find(c => c.id === campaignId);
+                if (camp) camp.status = status;
+                
+                // ถ้าเป็นการกดสวิตซ์ด้วยตัวเอง (isManual) ให้ล้างความจำของบอทออก เพื่อให้บอทกลับมาประเมินกฎใหม่ได้
+                if (isManual) {
+                    const now = new Date();
+                    const todayStr = now.getFullYear() + '-' + (now.getMonth() + 1) + '-' + now.getDate();
+                    localStorage.removeItem(`last_exec_toggle_pause_${campaignId}_${todayStr}`);
+                    localStorage.removeItem(`last_exec_toggle_activate_${campaignId}_${todayStr}`);
+                }
+                
                 window.showToast(`เปลี่ยนสถานะเป็น ${status} แล้ว`);
                 return true;
             } catch(err) {
@@ -1972,8 +1997,8 @@
                 const purchases = parseInt(window.getFbActionVal(ins.actions, purTypesList));
                 const msgs = parseInt(window.getFbActionVal(ins.actions, msgTypesList));
                 const convVal = window.getFbActionVal(ins.action_values, purTypesList);
-                const costPur = purchases > 0 ? spend / purchases : 0;
-                const costMsg = msgs > 0 ? spend / msgs : 0;
+                const costPur = purchases > 0 ? spend / purchases : (spend > 0 ? spend : 0);
+                const costMsg = msgs > 0 ? spend / msgs : (spend > 0 ? spend : 0);
                 const roas = spend > 0 ? convVal / spend : 0;
                 const adSpendPct = convVal > 0 ? (spend / convVal) * 100 : 0;
                 const closingRate = msgs > 0 ? (purchases / msgs) * 100 : 0;
@@ -2195,7 +2220,7 @@
                             ctr = parseFloat(ins.ctr || 0);
                             const purchases = parseInt(window.getFbActionVal(ins.actions, purTypesList));
                             const convVal = window.getFbActionVal(ins.action_values, purTypesList);
-                            cpa = purchases > 0 ? spend / purchases : 0;
+                            cpa = purchases > 0 ? spend / purchases : (spend > 0 ? spend : 0);
                             roas = spend > 0 ? convVal / spend : 0;
                         }
                         return { name: camp.name, spend, cpa, roas, ctr, status: camp.status };
@@ -2348,7 +2373,7 @@
                             <select class="operator-select w-24 border border-gray-300 rounded-md p-2 outline-none text-sm font-bold text-gray-700">
                                 <option value=">" ${cond.operator === '>' ? 'selected' : ''}>มากกว่า (>)</option>
                                 <option value="<" ${cond.operator === '<' ? 'selected' : ''}>น้อยกว่า (<)</option>
-                                <option value="=" ${cond.operator === '=' || cond.operator === '=' ? 'selected' : ''}>เท่ากับ (=)</option>
+                                <option value="==" ${cond.operator === '==' || cond.operator === '=' ? 'selected' : ''}>เท่ากับ (==)</option>
                             </select>
                             <input type="number" value="${cond.value !== undefined ? cond.value : ''}" placeholder="ระบุค่า" class="val-input w-24 border border-gray-300 rounded-md p-2 outline-none text-sm text-center font-bold">
                             <button onclick="window.removeCondition(this)" class="text-red-400 hover:text-white hover:bg-red-500 w-8 h-8 rounded-md shrink-0 transition flex items-center justify-center border border-red-200 bg-white"><i class="fa-solid fa-trash"></i></button>
@@ -2482,7 +2507,7 @@
                     <select class="operator-select w-24 border border-gray-300 rounded-md p-2 outline-none text-sm font-bold text-gray-700">
                         <option value="<">น้อยกว่า (<)</option>
                         <option value=">">มากกว่า (>)</option>
-                        <option value="=">เท่ากับ (=)</option>
+                        <option value="==">เท่ากับ (==)</option>
                     </select>
                     <input type="number" placeholder="ระบุค่า" class="val-input w-24 border border-gray-300 rounded-md p-2 outline-none text-sm text-center font-bold">
                     <button onclick="window.removeCondition(this)" class="text-red-400 hover:text-white hover:bg-red-500 w-8 h-8 rounded-md shrink-0 transition flex items-center justify-center border border-red-200 bg-white"><i class="fa-solid fa-trash"></i></button>
@@ -2717,6 +2742,8 @@
                         if (action === 'pause' && camp.status !== 'ACTIVE') continue;
 
                         let ruleResult = null;
+                        let rulePurchaseVal = 0;
+                        let ruleMessageVal = 0;
                         let hasPurchaseCond = false;
                         let hasMessageCond = false;
 
@@ -2726,9 +2753,6 @@
                             const operator = cond.operator;
                             const val = parseFloat(cond.value) || 0;
                             const timeframe = cond.timeframe || currentDatePreset; 
-                            
-                            if (['purchases', 'cost_per_purchase', 'roas'].includes(metric)) hasPurchaseCond = true;
-                            if (['messages', 'cost_per_msg'].includes(metric)) hasMessageCond = true;
 
                             let insightData = null;
                             
@@ -2758,10 +2782,18 @@
                             else if (metric === 'purchases') campVal = purchases;
                             else if (metric === 'messages') campVal = msgs;
                             else if (metric === 'roas') campVal = spendNum > 0 ? convVal / spendNum : 0;
-                            else if (metric === 'cost_per_purchase') campVal = purchases > 0 ? spendNum / purchases : 0;
-                            else if (metric === 'cost_per_msg') campVal = msgs > 0 ? spendNum / msgs : 0;
+                            else if (metric === 'cost_per_purchase') campVal = purchases > 0 ? spendNum / purchases : (spendNum > 0 ? spendNum : 0);
+                            else if (metric === 'cost_per_msg') campVal = msgs > 0 ? spendNum / msgs : (spendNum > 0 ? spendNum : 0);
                             else if (metric === 'ctr') campVal = parseFloat(insightData.ctr || 0);
                             else if (metric === 'cpm') campVal = parseFloat(insightData.cpm || 0);
+
+                            if (metric === 'purchases') {
+                                hasPurchaseCond = true;
+                                rulePurchaseVal = campVal;
+                            } else if (metric === 'messages') {
+                                hasMessageCond = true;
+                                ruleMessageVal = campVal;
+                            }
 
                             let isCondTrue = false;
                             if (operator === '>') isCondTrue = campVal > val;
@@ -2793,16 +2825,16 @@
 
                                 // เพื่อให้เพิ่มงบ "เมื่อมีการซื้อหรือทักเพิ่มขึ้นจริงๆ เท่านั้น" 
                                 // ป้องกันการเพิ่มงบซ้ำซ้อนถ้าจำนวนการซื้อยังเท่าเดิม
-                                if (hasPurchaseCond && lastPurchases !== -1 && camp.purchases === lastPurchases) {
+                                if (hasPurchaseCond && lastPurchases !== -1 && rulePurchaseVal <= lastPurchases) {
                                     canExecute = false;
-                                } else if (hasMessageCond && !hasPurchaseCond && lastMessages !== -1 && camp.msgsNum === lastMessages) {
+                                } else if (hasMessageCond && !hasPurchaseCond && lastMessages !== -1 && ruleMessageVal <= lastMessages) {
                                     canExecute = false;
                                 }
                                 
                                 if (canExecute) {
                                     localStorage.setItem(memoryKey, JSON.stringify({
-                                        purchases: camp.purchases,
-                                        messages: camp.msgsNum,
+                                        purchases: rulePurchaseVal,
+                                        messages: ruleMessageVal,
                                         timestamp: Date.now()
                                     }));
                                 }
