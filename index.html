@@ -1404,35 +1404,35 @@
             return data;
         };
 
-        // ฟังก์ชันจับการทักข้อความที่ปรับปรุงใหม่ กวาดจับทุกรูปแบบการสนทนา
+        // ฟังก์ชันจับการทักข้อความและการซื้อที่ปรับปรุงใหม่ ป้องกันการนับซ้ำ (Double Counting)
         window.getFbActionVal = function(arr, types) {
             if (!arr) return 0;
-            let total = 0;
             
-            if (types.includes('messages') || types.includes('onsite_conversion.messaging_conversation_started_7d')) {
-                const matching = arr.filter(a => a.action_type && (
-                    a.action_type.includes('messaging_conversation_started') || 
-                    a.action_type.includes('messaging_first_reply') || 
-                    a.action_type === 'messages'
-                ));
-                matching.forEach(item => total += parseFloat(item.value || 0));
-                if (total > 0) return total;
-            }
-            
-            if (types.includes('purchase') || types.includes('omni_purchase')) {
-                const matching = arr.filter(a => a.action_type && (
-                    a.action_type === 'purchase' || 
-                    a.action_type === 'omni_purchase' || 
-                    a.action_type.includes('purchase')
-                ));
-                matching.forEach(item => total += parseFloat(item.value || 0));
-                if (total > 0) return total;
-            }
-
+            // 1. ค้นหาแบบตรงตัวตามลำดับความสำคัญก่อน (หาเจอตัวแรกให้ใช้ค่านั้นเลย ป้องกันการบวกเลขซ้ำซ้อน)
             for (let t of types) {
                 const item = arr.find(a => a.action_type === t);
                 if (item) return parseFloat(item.value);
             }
+            
+            // 2. Fallback: ถ้าหาชื่อ Event แบบตรงตัวไม่เจอ ให้ลองหาคำที่มีคีย์เวิร์ดเกี่ยวข้อง (ดึงมาแค่ค่าแรกที่เจอ ห้ามเอามาบวกกัน)
+            if (types.includes('messages') || types.includes('onsite_conversion.messaging_conversation_started_7d')) {
+                const fallbackItem = arr.find(a => a.action_type && (
+                    a.action_type.includes('messaging_conversation_started') || 
+                    a.action_type.includes('messaging_first_reply') || 
+                    a.action_type === 'messages'
+                ));
+                if (fallbackItem) return parseFloat(fallbackItem.value);
+            }
+            
+            if (types.includes('purchase') || types.includes('omni_purchase')) {
+                const fallbackItem = arr.find(a => a.action_type && (
+                    a.action_type === 'purchase' || 
+                    a.action_type === 'omni_purchase' || 
+                    a.action_type.includes('purchase')
+                ));
+                if (fallbackItem) return parseFloat(fallbackItem.value);
+            }
+
             return 0;
         };
 
@@ -2732,14 +2732,38 @@
                                 }
                             }
 
+                            // --- ส่วนที่เพิ่มเข้ามาใหม่ เพื่อป้องกันบอทปิด/เปิด ซ้ำซ้อนกับผู้ใช้งานในวันเดียวกัน ---
+                            if (canExecute && (action === 'pause' || action === 'activate')) {
+                                const now = new Date();
+                                const todayStr = now.getFullYear() + '-' + (now.getMonth() + 1) + '-' + now.getDate();
+                                // ใช้ Key กลางที่ผูกกับ action และ camp.id ไปเลย เพื่อกันไม่ให้ "กฎข้ออื่น" มาสั่งปิดแคมเปญนี้ซ้ำอีกในวันเดียวกัน
+                                const cacheKey = `last_exec_toggle_${action}_${camp.id}_${todayStr}`;
+                                const alreadyExecutedToday = localStorage.getItem(cacheKey);
+                                
+                                if (alreadyExecutedToday) {
+                                    canExecute = false;
+                                }
+                            }
+                            // ------------------------------------------------------------------------
+
                             if (canExecute) {
                                 triggeredCount++;
                                 if (action === 'activate') {
                                     await window.toggleRealCampaign(camp.id, true);
                                     window.addRuleLog(camp.name, rule.name, 'ACTIVATE', 'เปิดใช้งานแคมเปญสำเร็จ');
+                                    
+                                    const now = new Date();
+                                    const todayStr = now.getFullYear() + '-' + (now.getMonth() + 1) + '-' + now.getDate();
+                                    localStorage.setItem(`last_exec_toggle_activate_${camp.id}_${todayStr}`, 'true');
+
                                 } else if (action === 'pause') {
                                     await window.toggleRealCampaign(camp.id, false);
                                     window.addRuleLog(camp.name, rule.name, 'PAUSE', 'ปิดแคมเปญชั่วคราว');
+                                    
+                                    const now = new Date();
+                                    const todayStr = now.getFullYear() + '-' + (now.getMonth() + 1) + '-' + now.getDate();
+                                    localStorage.setItem(`last_exec_toggle_pause_${camp.id}_${todayStr}`, 'true');
+
                                 } else if (action === 'inc_budget' || action === 'dec_budget' || action === 'reset_budget') {
                                     let currentBudget = parseFloat(camp.daily_budget) || 0; // ในหน่วย Cent
                                     if (currentBudget > 0) {
