@@ -2717,6 +2717,8 @@
                         if (action === 'pause' && camp.status !== 'ACTIVE') continue;
 
                         let ruleResult = null;
+                        let hasPurchaseCond = false;
+                        let hasMessageCond = false;
 
                         for (let idx = 0; idx < rule.conditions.length; idx++) {
                             const cond = rule.conditions[idx];
@@ -2724,6 +2726,9 @@
                             const operator = cond.operator;
                             const val = parseFloat(cond.value) || 0;
                             const timeframe = cond.timeframe || currentDatePreset; 
+                            
+                            if (['purchases', 'cost_per_purchase', 'roas'].includes(metric)) hasPurchaseCond = true;
+                            if (['messages', 'cost_per_msg'].includes(metric)) hasMessageCond = true;
 
                             let insightData = null;
                             
@@ -2777,30 +2782,27 @@
                         if (ruleResult) {
                             let canExecute = true;
 
-                            const memoryKey = `last_metric_${folder.id}_${ruleIdx}_${camp.id}`;
+                            // ใช้ชื่อของกฎเป็นคีย์อ้างอิงความจำ แทนการใช้ลำดับ (Index) ป้องกันปัญหากดสลับลำดับกฎแล้วระบบรวน
+                            const ruleKey = rule.name ? rule.name.replace(/\s+/g, '_') : `rule_${ruleIdx}`;
+                            const memoryKey = `last_metric_${folder.id}_${ruleKey}_${camp.id}`;
                             const lastMemory = JSON.parse(localStorage.getItem(memoryKey) || '{}');
-                            
-                            const hasPurchaseCond = rule.conditions.some(c => c.metric === 'purchases');
-                            const hasMessageCond = rule.conditions.some(c => c.metric === 'messages');
 
-                            if (action === 'inc_budget' && (hasPurchaseCond || hasMessageCond)) {
-                                const currentPurchases = parseInt(window.getFbActionVal(camp.insights?.data?.[0]?.actions, purTypesList)) || 0;
-                                const currentMessages = parseInt(window.getFbActionVal(camp.insights?.data?.[0]?.actions, msgTypesList)) || 0;
-                                
-                                const lastPurchases = parseInt(lastMemory.purchases) || 0;
-                                const lastMessages = parseInt(lastMemory.messages) || 0;
+                            if (action === 'inc_budget') {
+                                const lastPurchases = lastMemory.purchases !== undefined ? parseInt(lastMemory.purchases) : -1;
+                                const lastMessages = lastMemory.messages !== undefined ? parseInt(lastMemory.messages) : -1;
 
-                                if (hasPurchaseCond && currentPurchases <= lastPurchases) {
+                                // เพื่อให้เพิ่มงบ "เมื่อมีการซื้อหรือทักเพิ่มขึ้นจริงๆ เท่านั้น" 
+                                // ป้องกันการเพิ่มงบซ้ำซ้อนถ้าจำนวนการซื้อยังเท่าเดิม
+                                if (hasPurchaseCond && lastPurchases !== -1 && camp.purchases === lastPurchases) {
                                     canExecute = false;
-                                }
-                                if (hasMessageCond && currentMessages <= lastMessages) {
+                                } else if (hasMessageCond && !hasPurchaseCond && lastMessages !== -1 && camp.msgsNum === lastMessages) {
                                     canExecute = false;
                                 }
                                 
                                 if (canExecute) {
                                     localStorage.setItem(memoryKey, JSON.stringify({
-                                        purchases: currentPurchases,
-                                        messages: currentMessages,
+                                        purchases: camp.purchases,
+                                        messages: camp.msgsNum,
                                         timestamp: Date.now()
                                     }));
                                 }
@@ -2808,7 +2810,7 @@
 
                             if (canExecute && (action === 'inc_budget' || action === 'dec_budget')) {
                                 const freqHours = parseFloat(rule.actionFreq) || 24;
-                                const cacheKey = `last_exec_${folder.id}_${ruleIdx}_${camp.id}`;
+                                const cacheKey = `last_exec_${folder.id}_${ruleKey}_${camp.id}`;
                                 const lastExec = localStorage.getItem(cacheKey);
                                 
                                 if (lastExec) {
@@ -2824,13 +2826,19 @@
                                 const currentHour = now.getHours();
                                 const currentMin = now.getMinutes();
 
-                                const isPastTime = (currentHour > targetHour) || (currentHour === targetHour && currentMin >= targetMin);
+                                const currentTotalMins = (currentHour * 60) + currentMin;
+                                const targetTotalMins = (targetHour * 60) + targetMin;
+
+                                // ตรวจสอบว่าเวลาปัจจุบันถึงเวลาที่ตั้งไว้แล้วหรือยัง และอยู่ในช่วง 90 นาทีหลังจากนั้น
+                                // เพื่อกันไม่ให้รันก่อนเวลา (เช่น ตั้ง 00:30 แต่กดรัน 00:15) 
+                                // และกันไม่ให้รันผิดเวลาตอนบ่าย (เช่น มากดตอน 17:00)
+                                const isTimeMatch = (currentTotalMins >= targetTotalMins) && (currentTotalMins <= targetTotalMins + 90);
 
                                 const todayStr = now.getFullYear() + '-' + (now.getMonth() + 1) + '-' + now.getDate();
-                                const cacheKey = `last_exec_reset_${folder.id}_${ruleIdx}_${camp.id}_${todayStr}`;
+                                const cacheKey = `last_exec_reset_${folder.id}_${ruleKey}_${camp.id}_${todayStr}`;
                                 const alreadyExecutedToday = localStorage.getItem(cacheKey);
 
-                                if (!isPastTime || alreadyExecutedToday) {
+                                if (!isTimeMatch || alreadyExecutedToday) {
                                     canExecute = false;
                                 }
                             }
@@ -2923,12 +2931,12 @@
                                                     }
 
                                                     if (action === 'inc_budget' || action === 'dec_budget') {
-                                                        const cacheKey = `last_exec_${folder.id}_${ruleIdx}_${camp.id}`;
+                                                        const cacheKey = `last_exec_${folder.id}_${ruleKey}_${camp.id}`;
                                                         localStorage.setItem(cacheKey, Date.now().toString());
                                                     } else if (action === 'reset_budget') {
                                                         const now = new Date();
                                                         const todayStr = now.getFullYear() + '-' + (now.getMonth() + 1) + '-' + now.getDate();
-                                                        const cacheKey = `last_exec_reset_${folder.id}_${ruleIdx}_${camp.id}_${todayStr}`;
+                                                        const cacheKey = `last_exec_reset_${folder.id}_${ruleKey}_${camp.id}_${todayStr}`;
                                                         localStorage.setItem(cacheKey, 'true');
                                                     }
                                                 }
