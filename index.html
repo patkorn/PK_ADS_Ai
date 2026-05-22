@@ -142,8 +142,8 @@
                 <a onclick="window.switchTab('insights')" id="nav-insights" class="sidebar-item flex items-center px-3 py-2.5 rounded-lg text-gray-700"><i class="fa-solid fa-chart-pie w-6 text-center mr-2"></i> <span data-i18n="menuInsights">ข้อมูลเชิงลึก</span></a>
                 <a onclick="window.switchTab('abtest')" id="nav-abtest" class="sidebar-item flex items-center px-3 py-2.5 rounded-lg text-gray-700"><i class="fa-solid fa-scale-balanced w-6 text-center mr-2 text-indigo-500"></i> <span data-i18n="menuABTest">A/B Testing</span></a>
                 <a onclick="window.switchTab('breakeven')" id="nav-breakeven" class="sidebar-item flex items-center px-3 py-2.5 rounded-lg text-gray-700"><i class="fa-solid fa-calculator w-6 text-center mr-2 text-emerald-500"></i> <span data-i18n="menuBreakeven">คำนวณจุดคุ้มทุน</span></a>
-                <a onclick="window.switchTab('rules')" id="nav-rules" class="sidebar-item flex items-center px-3 py-2.5 rounded-lg text-gray-700"><i class="fa-solid fa-bolt w-6 text-center mr-2 text-yellow-500"></i> <span data-i18n="menuRules">กฎอัตโนมัติ</span></a>
                 <a onclick="window.switchTab('planner')" id="nav-planner" class="sidebar-item flex items-center px-3 py-2.5 rounded-lg text-gray-700"><i class="fa-solid fa-map-location-dot w-6 text-center mr-2 text-blue-500"></i> <span data-i18n="menuPlanner">วางแผนงบโฆษณา</span></a>
+                <a onclick="window.switchTab('rules')" id="nav-rules" class="sidebar-item flex items-center px-3 py-2.5 rounded-lg text-gray-700"><i class="fa-solid fa-bolt w-6 text-center mr-2 text-yellow-500"></i> <span data-i18n="menuRules">กฎอัตโนมัติ</span></a>
                 <a onclick="window.switchTab('settings')" id="nav-settings" class="sidebar-item flex items-center px-3 py-2.5 rounded-lg text-gray-700 mt-auto"><i class="fa-solid fa-key w-6 text-center mr-2"></i> <span data-i18n="menuSettings">ตั้งค่า & โทเคน</span></a>
             </nav>
 
@@ -380,7 +380,7 @@
                     <div class="flex justify-between items-end max-w-4xl">
                         <div>
                             <h2 class="text-2xl font-bold text-gray-800" data-i18n="ruleTitle">กฎอัตโนมัติ (Automated Rules)</h2>
-                            <p class="text-gray-500" data-i18n="ruleSubtitle">ตั้งเงื่อนไขเพื่อเปิด/ปิดแอด หรือปรับงบอัตโนมัติตาม KPI</p>
+                            <p class="text-gray-500" data-i18n="ruleSubtitle">ตั้งเงื่อนไขเพื่อเปิด/ปิดแอด หรือตั้งเวลาเปิด-ปิดอัตโนมัติ</p>
                         </div>
                         <div class="flex gap-2">
                             <button onclick="window.showRuleLogs()" class="bg-white border-2 border-gray-200 text-gray-700 px-4 py-2 rounded-lg font-bold shadow-sm hover:bg-gray-50 transition flex items-center">
@@ -848,7 +848,6 @@
         window.ruleFolders = [];
         window.currentFolderId = null;
 
-        // แก้ไขให้จับ "การทักแชท" อย่างครอบคลุม
         const msgTypesList = [
             'onsite_conversion.messaging_conversation_started_7d',
             'onsite_conversion.messaging_conversation_started',
@@ -1423,17 +1422,14 @@
             return data;
         };
 
-        // ฟังก์ชันจับการทักข้อความและการซื้อที่ปรับปรุงใหม่ ป้องกันการนับซ้ำ (Double Counting)
         window.getFbActionVal = function(arr, types) {
             if (!arr) return 0;
             
-            // 1. ค้นหาแบบตรงตัวตามลำดับความสำคัญก่อน (หาเจอตัวแรกให้ใช้ค่านั้นเลย ป้องกันการบวกเลขซ้ำซ้อน)
             for (let t of types) {
                 const item = arr.find(a => a.action_type === t);
                 if (item) return parseFloat(item.value);
             }
             
-            // 2. Fallback: ถ้าหาชื่อ Event แบบตรงตัวไม่เจอ ให้ลองหาคำที่มีคีย์เวิร์ดเกี่ยวข้อง (ดึงมาแค่ค่าแรกที่เจอ ห้ามเอามาบวกกัน)
             if (types.includes('messages') || types.includes('onsite_conversion.messaging_conversation_started_7d')) {
                 const fallbackItem = arr.find(a => a.action_type && (
                     a.action_type.includes('messaging_conversation_started') || 
@@ -1620,7 +1616,6 @@
 
             if (globalCampaignsData.length > 0) {
                 globalCampaignsData.sort((a, b) => {
-                    // จัดเรียงแคมเปญที่ปักหมุดขึ้นมาอยู่บนสุดก่อน
                     const aPinned = pinnedCamps.includes(a.id) ? 1 : 0;
                     const bPinned = pinnedCamps.includes(b.id) ? 1 : 0;
                     if (aPinned !== bPinned) return bPinned - aPinned;
@@ -1892,8 +1887,6 @@
                 await Promise.all(promises);
                 window.showToast(`ดำเนินการ${actionText}แคมเปญสำเร็จ!`);
                 
-                // --- ส่วนแก้ไขใหม่ ---
-                // รีเซ็ตความจำให้บอทเริ่มประมวลผลใหม่ เมื่อสั่งเปิด/ปิดแบบจำนวนมาก
                 const now = new Date();
                 const todayStr = now.getFullYear() + '-' + (now.getMonth() + 1) + '-' + now.getDate();
                 checkboxes.forEach(cb => {
@@ -1925,12 +1918,9 @@
                 const data = await res.json();
                 if (data.error) throw new Error(data.error.message);
                 
-                // --- ส่วนแก้ไขใหม่ ---
-                // ปรับปรุงสถานะบนหน้าจอทันที เพื่อให้บอททราบสถานะปัจจุบัน
                 const camp = globalCampaignsData.find(c => c.id === campaignId);
                 if (camp) camp.status = status;
                 
-                // ถ้าเป็นการกดสวิตซ์ด้วยตัวเอง (isManual) ให้ล้างความจำของบอทออก เพื่อให้บอทกลับมาประเมินกฎใหม่ได้
                 if (isManual) {
                     const now = new Date();
                     const todayStr = now.getFullYear() + '-' + (now.getMonth() + 1) + '-' + now.getDate();
@@ -2189,16 +2179,42 @@
             const selA = document.getElementById('abSelectA');
             const selB = document.getElementById('abSelectB');
             selA.innerHTML = ''; selB.innerHTML = '';
+            
             if(!globalCampaignsData || globalCampaignsData.length === 0) {
                 selA.innerHTML = '<option value="">ไม่มีข้อมูลแคมเปญ</option>';
                 selB.innerHTML = '<option value="">ไม่มีข้อมูลแคมเปญ</option>';
                 return;
             }
-            globalCampaignsData.forEach(camp => {
-                selA.add(new Option(camp.name, camp.id));
-                selB.add(new Option(camp.name, camp.id));
-            });
-            if(globalCampaignsData.length > 1) selB.selectedIndex = 1; 
+            
+            const buildGroups = () => {
+                const activeGroup = document.createElement('optgroup');
+                activeGroup.label = currentLang === 'th' ? '🟢 แคมเปญที่เปิดใช้งานอยู่ (Active)' : '🟢 Active Campaigns';
+                
+                const pausedGroup = document.createElement('optgroup');
+                pausedGroup.label = currentLang === 'th' ? '⚫ แคมเปญที่ปิดอยู่ (Paused)' : '⚫ Paused Campaigns';
+
+                let sortedCamps = [...globalCampaignsData].sort((a,b) => b.purchases - a.purchases);
+
+                sortedCamps.forEach(camp => {
+                    const statusIcon = camp.status === 'ACTIVE' ? '🟢' : '⚫';
+                    const opt = new Option(`${statusIcon} ${camp.name}`, camp.id);
+                    if (camp.status === 'ACTIVE') {
+                        activeGroup.appendChild(opt);
+                    } else {
+                        pausedGroup.appendChild(opt);
+                    }
+                });
+
+                const frag = document.createDocumentFragment();
+                if (activeGroup.children.length > 0) frag.appendChild(activeGroup);
+                if (pausedGroup.children.length > 0) frag.appendChild(pausedGroup);
+                return frag;
+            };
+
+            selA.appendChild(buildGroups());
+            selB.appendChild(buildGroups());
+            
+            if(selB.options.length > 1) selB.selectedIndex = 1; 
         };
 
         window.runABTestReal = function() {
@@ -2331,11 +2347,12 @@
             div.className = 'rule-card bg-white rounded-xl shadow-sm border border-gray-200 p-6 max-w-4xl relative transition-all';
             
             const name = ruleData ? ruleData.name : '';
-            const action = ruleData ? ruleData.action : 'pause';
-            const actionVal = ruleData ? ruleData.actionVal : '';
-            const actionFreq = ruleData && ruleData.actionFreq ? ruleData.actionFreq : 24;
+            let action = ruleData ? ruleData.action : 'pause';
+            // Fallback for old rules that might have removed options
+            if (['inc_budget', 'dec_budget', 'reset_budget'].includes(action)) {
+                action = 'pause';
+            }
             const actionTime = ruleData && ruleData.actionTime ? ruleData.actionTime : '00:00';
-            const maxBudgetLimit = ruleData && ruleData.maxBudgetLimit ? ruleData.maxBudgetLimit : '';
             
             let conditionsHtml = '';
             const renderCond = (cond, idx) => {
@@ -2394,40 +2411,20 @@
                 <button onclick="window.removeRuleBlock(this)" class="absolute top-4 right-4 text-gray-400 hover:text-red-500 transition p-2 rounded-full hover:bg-red-50" title="Delete Rule"><i class="fa-solid fa-trash"></i></button>
                 <div class="mb-6 pr-10">
                     <label class="block text-sm font-bold text-gray-700 mb-2" data-i18n="ruleName">ชื่อกฎ (Rule Name)</label>
-                    <input type="text" value="${name}" placeholder="e.g. Stop losing money ads" class="rule-name-input w-full border border-gray-300 rounded-lg p-3 outline-none focus:border-fb-blue focus:ring-1 focus:ring-fb-blue font-bold text-fb-dark">
+                    <input type="text" value="${name}" placeholder="e.g. ปิดแคมเปญขาดทุนอัตโนมัติ" class="rule-name-input w-full border border-gray-300 rounded-lg p-3 outline-none focus:border-fb-blue focus:ring-1 focus:ring-fb-blue font-bold text-fb-dark">
                 </div>
                 <div class="mb-6 bg-indigo-50/50 p-4 rounded-lg border border-indigo-100">
                     <label class="block text-sm font-bold text-indigo-900 mb-2" data-i18n="ruleAction">การดำเนินการ (Action to take)</label>
-                    <div class="flex gap-4 items-center">
-                        <select onchange="window.toggleActionInputs(this)" class="action-select w-1/3 border border-indigo-300 rounded-lg p-2.5 font-bold text-indigo-900 outline-none shadow-sm">
-                            <option value="pause" ${action === 'pause' ? 'selected' : ''}>ปิดแคมเปญ (Pause)</option>
-                            <option value="activate" ${action === 'activate' ? 'selected' : ''}>เปิดแคมเปญ (Activate)</option>
-                            <option value="inc_budget" ${action === 'inc_budget' ? 'selected' : ''}>เพิ่มงบประมาณ (%)</option>
-                            <option value="dec_budget" ${action === 'dec_budget' ? 'selected' : ''}>ลดงบประมาณ (%)</option>
-                            <option value="reset_budget" ${action === 'reset_budget' ? 'selected' : ''}>รีเซ็ตงบประมาณ</option>
+                    <div class="flex gap-4 items-center flex-wrap">
+                        <select onchange="window.toggleActionInputs(this)" class="action-select w-full md:w-1/3 border border-indigo-300 rounded-lg p-2.5 font-bold text-indigo-900 outline-none shadow-sm">
+                            <option value="pause" ${action === 'pause' ? 'selected' : ''}>ปิดแคมเปญทันที (Pause)</option>
+                            <option value="activate" ${action === 'activate' ? 'selected' : ''}>เปิดแคมเปญทันที (Activate)</option>
+                            <option value="pause_schedule" ${action === 'pause_schedule' ? 'selected' : ''}>ตั้งเวลาปิดแคมเปญ (Schedule Pause)</option>
+                            <option value="activate_schedule" ${action === 'activate_schedule' ? 'selected' : ''}>ตั้งเวลาเปิดแคมเปญ (Schedule Activate)</option>
                         </select>
-                        <div class="action-value-box ${(action === 'inc_budget' || action === 'dec_budget') ? 'flex' : 'hidden'} gap-2 items-center flex-wrap">
-                            <input type="number" value="${actionVal}" placeholder="20" class="action-value-input w-20 border border-gray-300 rounded-lg p-2.5 text-center">
-                            <span class="font-bold text-gray-600">%</span>
-                            <div class="pl-3 ml-2 border-l-2 border-indigo-200 flex gap-2 items-center">
-                                <span class="text-xs font-bold text-gray-600">ทำซ้ำทุกๆ</span>
-                                <input type="number" value="${actionFreq}" placeholder="24" class="action-freq-input w-16 border border-gray-300 rounded-lg p-2 text-center shadow-sm" title="ระยะเวลาหน่วงก่อนปรับงบครั้งถัดไป">
-                                <span class="text-xs font-bold text-gray-600">ชม.</span>
-                            </div>
-                            <div class="action-limit-box ${action === 'inc_budget' ? 'flex' : 'hidden'} pl-3 ml-2 border-l-2 border-indigo-200 gap-2 items-center">
-                                <span class="text-xs font-bold text-gray-600">แต่งบรวมไม่เกิน</span>
-                                <input type="number" value="${maxBudgetLimit}" placeholder="ไม่มีลิมิต" class="action-limit-input w-24 border border-gray-300 rounded-lg p-2 text-center shadow-sm" title="จำกัดงบรายวันสูงสุดไม่เกิน (บาท)">
-                                <span class="text-xs font-bold text-gray-600">บาท</span>
-                            </div>
-                        </div>
-                        <div class="action-reset-box ${action === 'reset_budget' ? 'flex' : 'hidden'} gap-2 items-center flex-wrap">
-                            <span class="font-bold text-gray-600" data-i18n="lblTo">เป็น</span>
-                            <input type="number" value="${actionVal}" placeholder="1000" class="action-reset-input w-24 border border-gray-300 rounded-lg p-2.5 text-center">
-                            <span class="font-bold text-gray-600" data-i18n="lblBaht">บาท</span>
-                            <div class="pl-3 ml-2 border-l-2 border-indigo-200 flex gap-2 items-center">
-                                <span class="text-xs font-bold text-gray-600">เวลา</span>
-                                <input type="time" value="${actionTime}" class="action-time-input border border-gray-300 rounded-lg p-2 text-center shadow-sm">
-                            </div>
+                        <div class="action-schedule-box ${(action === 'pause_schedule' || action === 'activate_schedule') ? 'flex' : 'hidden'} gap-2 items-center flex-wrap pl-3 md:border-l-2 md:border-indigo-200 w-full md:w-auto mt-2 md:mt-0">
+                            <span class="text-sm font-bold text-gray-700"><i class="fa-regular fa-clock mr-1"></i> เวลาทำการ:</span>
+                            <input type="time" value="${actionTime}" class="action-time-input border border-gray-300 rounded-lg p-2.5 text-center shadow-sm text-fb-dark font-bold outline-none focus:border-indigo-500">
                         </div>
                     </div>
                 </div>
@@ -2455,10 +2452,7 @@
         window.toggleActionInputs = function(selectEl) {
             const ruleCard = selectEl.closest('.rule-card');
             const val = selectEl.value;
-            ruleCard.querySelector('.action-value-box').classList.toggle('hidden', val !== 'inc_budget' && val !== 'dec_budget');
-            ruleCard.querySelector('.action-reset-box').classList.toggle('hidden', val !== 'reset_budget');
-            const limitBox = ruleCard.querySelector('.action-limit-box');
-            if (limitBox) limitBox.classList.toggle('hidden', val !== 'inc_budget');
+            ruleCard.querySelector('.action-schedule-box').classList.toggle('hidden', val !== 'pause_schedule' && val !== 'activate_schedule');
         };
 
         window.removeCondition = function(btn) {
@@ -2526,28 +2520,13 @@
             cards.forEach(card => {
                 const nameInput = card.querySelector('.rule-name-input');
                 const actionSelect = card.querySelector('.action-select');
-                const actionValInput = card.querySelector('.action-value-input');
-                const actionFreqInput = card.querySelector('.action-freq-input');
-                const actionResetInput = card.querySelector('.action-reset-input');
                 const actionTimeInput = card.querySelector('.action-time-input');
-                const actionLimitInput = card.querySelector('.action-limit-input');
                 
                 const name = nameInput ? nameInput.value : '';
                 const action = actionSelect ? actionSelect.value : 'pause';
-                let actionVal = '';
-                let actionFreq = 24;
-                let actionTime = '00:00';
-                let maxBudgetLimit = '';
                 
-                if(action === 'inc_budget' || action === 'dec_budget') {
-                    actionVal = actionValInput ? actionValInput.value : '';
-                    actionFreq = actionFreqInput ? parseFloat(actionFreqInput.value) || 24 : 24;
-                    if (action === 'inc_budget') {
-                        maxBudgetLimit = actionLimitInput && actionLimitInput.value ? parseFloat(actionLimitInput.value) : '';
-                    }
-                }
-                else if(action === 'reset_budget') {
-                    actionVal = actionResetInput ? actionResetInput.value : '';
+                let actionTime = '00:00';
+                if (action === 'pause_schedule' || action === 'activate_schedule') {
                     actionTime = actionTimeInput ? actionTimeInput.value : '00:00';
                 }
                 
@@ -2575,7 +2554,7 @@
                 });
 
                 if(name && conditions.length > 0) {
-                    rules.push({ name, action, actionVal, actionFreq, actionTime, maxBudgetLimit, conditions });
+                    rules.push({ name, action, actionTime, conditions });
                 }
             });
 
@@ -2664,10 +2643,8 @@
                     let actionBadge = '';
                     if(log.actionType === 'PAUSE') actionBadge = '<span class="bg-red-100 text-red-600 px-2 py-0.5 rounded text-[10px] font-bold">ปิด (Pause)</span>';
                     else if(log.actionType === 'ACTIVATE') actionBadge = '<span class="bg-emerald-100 text-emerald-600 px-2 py-0.5 rounded text-[10px] font-bold">เปิด (Active)</span>';
-                    else if(log.actionType === 'BUDGET_INC') actionBadge = '<span class="bg-blue-100 text-blue-600 px-2 py-0.5 rounded text-[10px] font-bold">เพิ่มงบ</span>';
-                    else if(log.actionType === 'BUDGET_DEC') actionBadge = '<span class="bg-orange-100 text-orange-600 px-2 py-0.5 rounded text-[10px] font-bold">ลดงบ</span>';
-                    else if(log.actionType === 'BUDGET_RESET') actionBadge = '<span class="bg-purple-100 text-purple-600 px-2 py-0.5 rounded text-[10px] font-bold">รีเซ็ตงบ</span>';
                     else if(log.actionType === 'ERROR') actionBadge = '<span class="bg-red-600 text-white px-2 py-0.5 rounded text-[10px] font-bold">เกิดข้อผิดพลาด</span>';
+                    else actionBadge = `<span class="bg-gray-200 text-gray-700 px-2 py-0.5 rounded text-[10px] font-bold">${log.actionType}</span>`;
                     
                     return `
                         <tr class="border-b border-gray-100 hover:bg-gray-50 transition">
@@ -2735,17 +2712,18 @@
                 for (let ruleIdx = 0; ruleIdx < folder.rules.length; ruleIdx++) {
                     let rule = folder.rules[ruleIdx];
                     const action = rule.action;
+                    
+                    let targetAction = (action === 'activate' || action === 'activate_schedule') ? 'activate' : 'pause';
+                    let isScheduled = (action === 'pause_schedule' || action === 'activate_schedule');
+
                     if (!rule.conditions || rule.conditions.length === 0) continue;
 
                     for (let camp of targetCampaigns) {
-                        if (action === 'activate' && camp.status === 'ACTIVE') continue;
-                        if (action === 'pause' && camp.status !== 'ACTIVE') continue;
+                        // เช็คข้ามกรณีที่สถานะตรงกับที่ต้องการจะทำอยู่แล้ว
+                        if (targetAction === 'activate' && camp.status === 'ACTIVE') continue;
+                        if (targetAction === 'pause' && camp.status !== 'ACTIVE') continue;
 
                         let ruleResult = null;
-                        let rulePurchaseVal = 0;
-                        let ruleMessageVal = 0;
-                        let hasPurchaseCond = false;
-                        let hasMessageCond = false;
 
                         for (let idx = 0; idx < rule.conditions.length; idx++) {
                             const cond = rule.conditions[idx];
@@ -2787,14 +2765,6 @@
                             else if (metric === 'ctr') campVal = parseFloat(insightData.ctr || 0);
                             else if (metric === 'cpm') campVal = parseFloat(insightData.cpm || 0);
 
-                            if (metric === 'purchases') {
-                                hasPurchaseCond = true;
-                                rulePurchaseVal = campVal;
-                            } else if (metric === 'messages') {
-                                hasMessageCond = true;
-                                ruleMessageVal = campVal;
-                            }
-
                             let isCondTrue = false;
                             if (operator === '>') isCondTrue = campVal > val;
                             else if (operator === '<') isCondTrue = campVal < val;
@@ -2814,168 +2784,75 @@
                         if (ruleResult) {
                             let canExecute = true;
 
-                            // ใช้ชื่อของกฎเป็นคีย์อ้างอิงความจำ แทนการใช้ลำดับ (Index) ป้องกันปัญหากดสลับลำดับกฎแล้วระบบรวน
+                            // ใช้ชื่อของกฎเป็นคีย์อ้างอิงความจำ
                             const ruleKey = rule.name ? rule.name.replace(/\s+/g, '_') : `rule_${ruleIdx}`;
-                            const memoryKey = `last_metric_${folder.id}_${ruleKey}_${camp.id}`;
-                            const lastMemory = JSON.parse(localStorage.getItem(memoryKey) || '{}');
-
-                            if (action === 'inc_budget') {
-                                const lastPurchases = lastMemory.purchases !== undefined ? parseInt(lastMemory.purchases) : -1;
-                                const lastMessages = lastMemory.messages !== undefined ? parseInt(lastMemory.messages) : -1;
-
-                                // เพื่อให้เพิ่มงบ "เมื่อมีการซื้อหรือทักเพิ่มขึ้นจริงๆ เท่านั้น" 
-                                // ป้องกันการเพิ่มงบซ้ำซ้อนถ้าจำนวนการซื้อยังเท่าเดิม
-                                if (hasPurchaseCond && lastPurchases !== -1 && rulePurchaseVal <= lastPurchases) {
-                                    canExecute = false;
-                                } else if (hasMessageCond && !hasPurchaseCond && lastMessages !== -1 && ruleMessageVal <= lastMessages) {
-                                    canExecute = false;
-                                }
-                                
-                                if (canExecute) {
-                                    localStorage.setItem(memoryKey, JSON.stringify({
-                                        purchases: rulePurchaseVal,
-                                        messages: ruleMessageVal,
-                                        timestamp: Date.now()
-                                    }));
-                                }
-                            }
-
-                            if (canExecute && (action === 'inc_budget' || action === 'dec_budget')) {
-                                const freqHours = parseFloat(rule.actionFreq) || 24;
-                                const cacheKey = `last_exec_${folder.id}_${ruleKey}_${camp.id}`;
-                                const lastExec = localStorage.getItem(cacheKey);
-                                
-                                if (lastExec) {
-                                    const elapsedMs = Date.now() - parseInt(lastExec);
-                                    if (elapsedMs < (freqHours * 3600 * 1000)) {
-                                        canExecute = false;
-                                    }
-                                }
-                            } else if (canExecute && action === 'reset_budget') {
-                                const resetTime = rule.actionTime || '00:00';
-                                const [targetHour, targetMin] = resetTime.split(':').map(Number);
+                            
+                            // จัดการตรวจสอบเวลา (กรณีเปิด-ปิด แบบตั้งเวลา)
+                            if (canExecute && isScheduled) {
+                                const scheduleTime = rule.actionTime || '00:00';
+                                const [targetHour, targetMin] = scheduleTime.split(':').map(Number);
                                 const now = new Date();
                                 const currentHour = now.getHours();
                                 const currentMin = now.getMinutes();
-
+                                
                                 const currentTotalMins = (currentHour * 60) + currentMin;
                                 const targetTotalMins = (targetHour * 60) + targetMin;
 
-                                // ตรวจสอบว่าเวลาปัจจุบันถึงเวลาที่ตั้งไว้แล้วหรือยัง และอยู่ในช่วง 90 นาทีหลังจากนั้น
-                                // เพื่อกันไม่ให้รันก่อนเวลา (เช่น ตั้ง 00:30 แต่กดรัน 00:15) 
-                                // และกันไม่ให้รันผิดเวลาตอนบ่าย (เช่น มากดตอน 17:00)
-                                const isTimeMatch = (currentTotalMins >= targetTotalMins) && (currentTotalMins <= targetTotalMins + 90);
+                                // รันคำสั่งเมื่อเวลาปัจจุบันเท่ากับหรือเลยเวลาที่ตั้งไว้ แต่ไม่เกิน 60 นาที (ครอบคลุมรอบบอทสูงสุด)
+                                const isTimeMatch = (currentTotalMins >= targetTotalMins) && (currentTotalMins <= targetTotalMins + 60);
 
-                                const todayStr = now.getFullYear() + '-' + (now.getMonth() + 1) + '-' + now.getDate();
-                                const cacheKey = `last_exec_reset_${folder.id}_${ruleKey}_${camp.id}_${todayStr}`;
-                                const alreadyExecutedToday = localStorage.getItem(cacheKey);
-
-                                if (!isTimeMatch || alreadyExecutedToday) {
+                                if (!isTimeMatch) {
                                     canExecute = false;
+                                } else {
+                                    // ป้องกันไม่ให้รันซ้ำในวันเดียวกัน สำหรับกฎแบบตั้งเวลานี้
+                                    const todayStr = now.getFullYear() + '-' + (now.getMonth() + 1) + '-' + now.getDate();
+                                    const cacheKey = `last_exec_schedule_${folder.id}_${ruleKey}_${camp.id}_${todayStr}`;
+                                    if (localStorage.getItem(cacheKey)) {
+                                        canExecute = false;
+                                    } else {
+                                        localStorage.setItem(cacheKey, 'true');
+                                    }
                                 }
                             }
 
-                            // --- ส่วนที่เพิ่มเข้ามาใหม่ เพื่อป้องกันบอทปิด/เปิด ซ้ำซ้อนกับผู้ใช้งานในวันเดียวกัน ---
-                            if (canExecute && (action === 'pause' || action === 'activate')) {
+                            // การป้องกันบอทรันคำสั่ง เปิด-ปิด ทับซ้อนกับการทำงานแบบ Manual หรือกฏข้ออื่น ในวันเดียวกัน (กรณีไม่ได้ตั้งเวลา)
+                            if (canExecute && !isScheduled) {
                                 const now = new Date();
                                 const todayStr = now.getFullYear() + '-' + (now.getMonth() + 1) + '-' + now.getDate();
-                                // ใช้ Key กลางที่ผูกกับ action และ camp.id ไปเลย เพื่อกันไม่ให้ "กฎข้ออื่น" มาสั่งปิดแคมเปญนี้ซ้ำอีกในวันเดียวกัน
-                                const cacheKey = `last_exec_toggle_${action}_${camp.id}_${todayStr}`;
+                                const cacheKey = `last_exec_toggle_${targetAction}_${camp.id}_${todayStr}`;
                                 const alreadyExecutedToday = localStorage.getItem(cacheKey);
                                 
                                 if (alreadyExecutedToday) {
                                     canExecute = false;
                                 }
                             }
-                            // ------------------------------------------------------------------------
 
                             if (canExecute) {
                                 triggeredCount++;
-                                if (action === 'activate') {
+                                if (targetAction === 'activate') {
                                     const success = await window.toggleRealCampaign(camp.id, true);
                                     if (success) {
-                                        window.addRuleLog(camp.name, rule.name, 'ACTIVATE', 'เปิดใช้งานแคมเปญสำเร็จ');
-                                        const now = new Date();
-                                        const todayStr = now.getFullYear() + '-' + (now.getMonth() + 1) + '-' + now.getDate();
-                                        localStorage.setItem(`last_exec_toggle_activate_${camp.id}_${todayStr}`, 'true');
+                                        window.addRuleLog(camp.name, rule.name, 'ACTIVATE', isScheduled ? `เปิดแคมเปญตามเวลาที่กำหนด (${rule.actionTime})` : 'เปิดใช้งานแคมเปญสำเร็จ');
+                                        if(!isScheduled) {
+                                            const now = new Date();
+                                            const todayStr = now.getFullYear() + '-' + (now.getMonth() + 1) + '-' + now.getDate();
+                                            localStorage.setItem(`last_exec_toggle_activate_${camp.id}_${todayStr}`, 'true');
+                                        }
                                     } else {
-                                        window.addRuleLog(camp.name, rule.name, 'ERROR', 'เกิดข้อผิดพลาดในการเปิดแคมเปญ (Facebook ปฏิเสธคำสั่ง)');
+                                        window.addRuleLog(camp.name, rule.name, 'ERROR', 'เกิดข้อผิดพลาดในการเปิดแคมเปญ');
                                     }
 
-                                } else if (action === 'pause') {
+                                } else if (targetAction === 'pause') {
                                     const success = await window.toggleRealCampaign(camp.id, false);
                                     if (success) {
-                                        window.addRuleLog(camp.name, rule.name, 'PAUSE', 'ปิดแคมเปญชั่วคราว');
-                                        const now = new Date();
-                                        const todayStr = now.getFullYear() + '-' + (now.getMonth() + 1) + '-' + now.getDate();
-                                        localStorage.setItem(`last_exec_toggle_pause_${camp.id}_${todayStr}`, 'true');
+                                        window.addRuleLog(camp.name, rule.name, 'PAUSE', isScheduled ? `ปิดแคมเปญตามเวลาที่กำหนด (${rule.actionTime})` : 'ปิดแคมเปญชั่วคราว');
+                                        if(!isScheduled) {
+                                            const now = new Date();
+                                            const todayStr = now.getFullYear() + '-' + (now.getMonth() + 1) + '-' + now.getDate();
+                                            localStorage.setItem(`last_exec_toggle_pause_${camp.id}_${todayStr}`, 'true');
+                                        }
                                     } else {
-                                        window.addRuleLog(camp.name, rule.name, 'ERROR', 'เกิดข้อผิดพลาดในการปิดแคมเปญ (Facebook ปฏิเสธคำสั่ง)');
-                                    }
-
-                                } else if (action === 'inc_budget' || action === 'dec_budget' || action === 'reset_budget') {
-                                    let currentBudget = parseFloat(camp.daily_budget) || 0; // ในหน่วย Cent
-                                    if (currentBudget > 0) {
-                                        let newBudget = currentBudget;
-                                        if (action === 'inc_budget') {
-                                            const pct = parseFloat(rule.actionVal) || 0;
-                                            newBudget = currentBudget + (currentBudget * (pct / 100));
-                                            
-                                            if (rule.maxBudgetLimit) {
-                                                const limitInCents = rule.maxBudgetLimit * 100; 
-                                                if (currentBudget >= limitInCents) {
-                                                    newBudget = currentBudget;
-                                                } else if (newBudget > limitInCents) {
-                                                    newBudget = limitInCents;
-                                                }
-                                            }
-                                        } else if (action === 'dec_budget') {
-                                            const pct = parseFloat(rule.actionVal) || 0;
-                                            newBudget = currentBudget - (currentBudget * (pct / 100));
-                                        } else if (action === 'reset_budget') {
-                                            const targetVal = parseFloat(rule.actionVal) || 0;
-                                            newBudget = targetVal * 100; 
-                                        }
-                                        
-                                        if (Math.floor(newBudget) !== Math.floor(currentBudget)) {
-                                            try {
-                                                const res = await fetch(`https://graph.facebook.com/v21.0/${camp.id}?access_token=${loggedInEmployee.fb_token}`, {
-                                                    method: 'POST',
-                                                    headers: { 'Content-Type': 'application/json' },
-                                                    body: JSON.stringify({ daily_budget: Math.floor(newBudget) })
-                                                });
-                                                const resultData = await res.json();
-                                                
-                                                if (resultData.error) {
-                                                    console.error("Budget Update Error: ", resultData.error);
-                                                    window.addRuleLog(camp.name, rule.name, 'ERROR', `การปรับงบเฟล: ${resultData.error.message}`);
-                                                } else {
-                                                    // บันทึก Log การทำงานเมื่ออัปเดตสำเร็จเท่านั้น
-                                                    const oldValTHB = (currentBudget/100).toLocaleString(undefined, {maximumFractionDigits:0});
-                                                    const newValTHB = (newBudget/100).toLocaleString(undefined, {maximumFractionDigits:0});
-                                                    
-                                                    if (action === 'inc_budget') {
-                                                        window.addRuleLog(camp.name, rule.name, 'BUDGET_INC', `เพิ่มงบจาก ฿${oldValTHB} เป็น ฿${newValTHB}`);
-                                                    } else if (action === 'dec_budget') {
-                                                        window.addRuleLog(camp.name, rule.name, 'BUDGET_DEC', `ลดงบจาก ฿${oldValTHB} เป็น ฿${newValTHB}`);
-                                                    } else if (action === 'reset_budget') {
-                                                        window.addRuleLog(camp.name, rule.name, 'BUDGET_RESET', `ปรับงบเป็น ฿${newValTHB}`);
-                                                    }
-
-                                                    if (action === 'inc_budget' || action === 'dec_budget') {
-                                                        const cacheKey = `last_exec_${folder.id}_${ruleKey}_${camp.id}`;
-                                                        localStorage.setItem(cacheKey, Date.now().toString());
-                                                    } else if (action === 'reset_budget') {
-                                                        const now = new Date();
-                                                        const todayStr = now.getFullYear() + '-' + (now.getMonth() + 1) + '-' + now.getDate();
-                                                        const cacheKey = `last_exec_reset_${folder.id}_${ruleKey}_${camp.id}_${todayStr}`;
-                                                        localStorage.setItem(cacheKey, 'true');
-                                                    }
-                                                }
-                                            } catch (err) {
-                                                window.addRuleLog(camp.name, rule.name, 'ERROR', `Network Error: ${err.message}`);
-                                            }
-                                        }
+                                        window.addRuleLog(camp.name, rule.name, 'ERROR', 'เกิดข้อผิดพลาดในการปิดแคมเปญ');
                                     }
                                 }
                             }
@@ -3004,7 +2881,7 @@
             
             const totalCost = cost + shipping + cod + other;
             const targetCpa = price - totalCost;
-            const targetRoas = totalCost > 0 ? price / totalCost : 0;
+            const targetRoas = targetCpa > 0 ? price / targetCpa : 0;
             const netProfit = targetCpa - adsCost;
             
             document.getElementById('resTotalCost').innerText = '฿' + totalCost.toLocaleString(undefined, {minimumFractionDigits: 2});
