@@ -619,10 +619,11 @@
                                     <th class="p-4 text-right text-emerald-600">ออเดอร์ (Orders)</th>
                                     <th class="p-4 text-right text-rose-500">งบยิงแอด (Ads Budget)</th>
                                     <th class="p-4 text-right text-indigo-600">กำไรสุทธิ (Net Profit)</th>
+                                    <th class="p-4 text-right text-purple-600">% กำไร (Margin)</th>
                                 </tr>
                             </thead>
                             <tbody id="goalTableBody" class="text-sm">
-                                <tr><td colspan="6" class="p-6 text-center text-gray-500">กรุณากดคำนวณเป้าหมาย</td></tr>
+                                <tr><td colspan="7" class="p-6 text-center text-gray-500">กรุณากดคำนวณเป้าหมาย</td></tr>
                             </tbody>
                         </table>
                     </div>
@@ -3076,7 +3077,9 @@
 
             // Render Table Rows
             const tbody = document.getElementById('goalTableBody');
-            tbody.innerHTML = rows.map(r => `
+            tbody.innerHTML = rows.map(r => {
+                const profitPct = r.sales > 0 ? (r.profit / r.sales) * 100 : 0;
+                return `
                 <tr class="border-b border-gray-100 hover:bg-gray-50 transition">
                     <td class="p-4 font-bold text-gray-700">${r.label}</td>
                     <td class="p-4 text-right font-medium">฿${r.sales.toLocaleString(undefined, {minimumFractionDigits:0, maximumFractionDigits:0})}</td>
@@ -3084,8 +3087,10 @@
                     <td class="p-4 text-right font-bold text-emerald-600">${r.orders.toLocaleString(undefined, {minimumFractionDigits:0, maximumFractionDigits:1})}</td>
                     <td class="p-4 text-right font-medium text-rose-500">฿${r.ads.toLocaleString(undefined, {minimumFractionDigits:0, maximumFractionDigits:0})}</td>
                     <td class="p-4 text-right font-black text-indigo-600">฿${r.profit.toLocaleString(undefined, {minimumFractionDigits:0, maximumFractionDigits:0})}</td>
+                    <td class="p-4 text-right font-bold text-purple-600">${profitPct.toFixed(2)}%</td>
                 </tr>
-            `).join('');
+                `;
+            }).join('');
 
             window.showToast("จำลองแผนการเติบโตเรียบร้อย!");
         };
@@ -3099,7 +3104,7 @@
             document.getElementById('glResCostMsg').innerText = '฿0.00';
             document.getElementById('glResCPA').innerText = '฿0.00';
             document.getElementById('glResROAS').innerText = '0.00x';
-            document.getElementById('goalTableBody').innerHTML = '<tr><td colspan="6" class="p-6 text-center text-gray-500">กรุณากดคำนวณเป้าหมาย</td></tr>';
+            document.getElementById('goalTableBody').innerHTML = '<tr><td colspan="7" class="p-6 text-center text-gray-500">กรุณากดคำนวณเป้าหมาย</td></tr>';
             window.showToast("ล้างข้อมูลเรียบร้อยแล้ว");
         };
 
