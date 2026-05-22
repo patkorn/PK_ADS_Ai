@@ -142,6 +142,7 @@
                 <a onclick="window.switchTab('insights')" id="nav-insights" class="sidebar-item flex items-center px-3 py-2.5 rounded-lg text-gray-700"><i class="fa-solid fa-chart-pie w-6 text-center mr-2"></i> <span data-i18n="menuInsights">ข้อมูลเชิงลึก</span></a>
                 <a onclick="window.switchTab('abtest')" id="nav-abtest" class="sidebar-item flex items-center px-3 py-2.5 rounded-lg text-gray-700"><i class="fa-solid fa-scale-balanced w-6 text-center mr-2 text-indigo-500"></i> <span data-i18n="menuABTest">A/B Testing</span></a>
                 <a onclick="window.switchTab('breakeven')" id="nav-breakeven" class="sidebar-item flex items-center px-3 py-2.5 rounded-lg text-gray-700"><i class="fa-solid fa-calculator w-6 text-center mr-2 text-emerald-500"></i> <span data-i18n="menuBreakeven">คำนวณจุดคุ้มทุน</span></a>
+                <a onclick="window.switchTab('goal')" id="nav-goal" class="sidebar-item flex items-center px-3 py-2.5 rounded-lg text-gray-700"><i class="fa-solid fa-bullseye w-6 text-center mr-2 text-rose-500"></i> <span>จำลองเป้าหมาย</span></a>
                 <a onclick="window.switchTab('planner')" id="nav-planner" class="sidebar-item flex items-center px-3 py-2.5 rounded-lg text-gray-700"><i class="fa-solid fa-map-location-dot w-6 text-center mr-2 text-blue-500"></i> <span data-i18n="menuPlanner">วางแผนงบโฆษณา</span></a>
                 <a onclick="window.switchTab('rules')" id="nav-rules" class="sidebar-item flex items-center px-3 py-2.5 rounded-lg text-gray-700"><i class="fa-solid fa-bolt w-6 text-center mr-2 text-yellow-500"></i> <span data-i18n="menuRules">กฎอัตโนมัติ</span></a>
                 <a onclick="window.switchTab('settings')" id="nav-settings" class="sidebar-item flex items-center px-3 py-2.5 rounded-lg text-gray-700 mt-auto"><i class="fa-solid fa-key w-6 text-center mr-2"></i> <span data-i18n="menuSettings">ตั้งค่า & โทเคน</span></a>
@@ -375,79 +376,6 @@
                     </div>
                 </div>
 
-                <!-- SECTION: Automated Rules -->
-                <div id="section-rules" class="hidden animate-fade-in space-y-6">
-                    <div class="flex justify-between items-end max-w-4xl">
-                        <div>
-                            <h2 class="text-2xl font-bold text-gray-800" data-i18n="ruleTitle">กฎอัตโนมัติ (Automated Rules)</h2>
-                            <p class="text-gray-500" data-i18n="ruleSubtitle">ตั้งเงื่อนไขเพื่อเปิด/ปิดแอด หรือตั้งเวลาเปิด-ปิดอัตโนมัติ</p>
-                        </div>
-                        <div class="flex gap-2">
-                            <button onclick="window.showRuleLogs()" class="bg-white border-2 border-gray-200 text-gray-700 px-4 py-2 rounded-lg font-bold shadow-sm hover:bg-gray-50 transition flex items-center">
-                                <i class="fa-solid fa-clock-rotate-left mr-2"></i> ประวัติการทำงาน
-                            </button>
-                            <button onclick="window.runAutomatedRules()" class="bg-indigo-500 text-white px-4 py-2 rounded-lg font-bold shadow-sm hover:bg-indigo-600 transition flex items-center">
-                                <i class="fa-solid fa-play mr-2"></i> รันกฎเดี๋ยวนี้
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- FOLDER MANAGEMENT TABS -->
-                    <div class="max-w-4xl bg-white border border-gray-200 rounded-xl p-4 mb-6 shadow-sm">
-                        <div class="flex items-center justify-between mb-3">
-                            <h3 class="font-bold text-gray-800 text-sm"><i class="fa-regular fa-folder-open text-fb-blue mr-1"></i> <span data-i18n="ruleFolderLabel">โฟลเดอร์สำหรับแยกกฎ</span></h3>
-                            <button onclick="window.addFolder()" class="text-xs font-bold text-fb-blue hover:underline"><i class="fa-solid fa-plus mr-1"></i> <span data-i18n="ruleAddFolder">เพิ่มโฟลเดอร์</span></button>
-                        </div>
-                        <div class="flex gap-2 overflow-x-auto pb-2 mb-4 border-b border-gray-100 custom-scrollbar" id="folderTabsContainer">
-                            <!-- Tabs injected via JS -->
-                        </div>
-                        <div class="flex flex-col md:flex-row gap-4 items-end bg-gray-50 p-4 rounded-lg border border-gray-200">
-                            <div class="flex-1 w-full">
-                                <label class="block text-xs font-bold text-gray-700 mb-1" data-i18n="ruleFolderName">ชื่อโฟลเดอร์ (Folder Name)</label>
-                                <input type="text" id="activeFolderName" oninput="window.updateFolderSetting()" class="w-full border border-gray-300 rounded-lg p-2.5 outline-none font-bold text-gray-800">
-                            </div>
-                            <div class="flex-1 w-full">
-                                <label class="block text-xs font-bold text-gray-700 mb-1" data-i18n="ruleKeyword">คีย์เวิร์ดในชื่อแคมเปญ (เว้นว่าง = ใช้กับทุกแคมเปญ)</label>
-                                <input type="text" id="activeFolderKeyword" oninput="window.updateFolderSetting()" placeholder="เช่น PROMO_" class="w-full border border-gray-300 rounded-lg p-2.5 outline-none font-mono text-sm text-fb-blue bg-blue-50">
-                            </div>
-                            <button onclick="window.deleteCurrentFolder()" class="bg-white border border-red-200 text-red-500 px-4 py-2.5 rounded-lg font-bold hover:bg-red-50 shrink-0 transition" title="ลบโฟลเดอร์นี้"><i class="fa-solid fa-trash"></i></button>
-                        </div>
-                    </div>
-
-                    <div class="bg-indigo-50 border border-indigo-200 rounded-xl p-5 max-w-4xl flex items-center justify-between shadow-sm">
-                        <div class="flex items-center gap-4">
-                            <div class="w-12 h-12 bg-indigo-500 text-white rounded-full flex items-center justify-center text-2xl shadow-inner">
-                                <i class="fa-solid fa-robot"></i>
-                            </div>
-                            <div>
-                                <h3 class="font-bold text-indigo-900 text-base">ระบบบอทอัตโนมัติ (Auto-Bot)</h3>
-                                <p class="text-xs font-medium mt-0.5" id="botStatusText"><span class="text-gray-500 font-bold">🔴 ปิดการทำงาน</span> (จะรันทุกโฟลเดอร์เมื่อเปิด)</p>
-                            </div>
-                        </div>
-                        <div class="flex items-center gap-4">
-                            <select id="autoBotInterval" class="border border-indigo-300 rounded-lg p-2.5 text-sm outline-none text-indigo-900 font-bold bg-white shadow-sm" onchange="window.updateBotInterval()">
-                                <option value="15">สแกนทุกๆ 15 นาที</option>
-                                <option value="30">สแกนทุกๆ 30 นาที</option>
-                                <option value="60">สแกนทุกๆ 1 ชั่วโมง</option>
-                            </select>
-                            <button id="btnToggleBot" onclick="window.toggleAutoBotAction()" class="bg-emerald-500 text-white px-5 py-2.5 rounded-lg font-bold shadow-md hover:bg-emerald-600 transition flex items-center">
-                                <i class="fa-solid fa-power-off mr-2"></i> <span>เริ่มบอท</span>
-                            </button>
-                        </div>
-                    </div>
-
-                    <div id="rulesListContainer" class="space-y-6">
-                        <!-- Rules injected via JS -->
-                    </div>
-
-                    <div class="max-w-4xl mt-6 space-y-4">
-                        <button onclick="window.addNewRuleBlock()" class="bg-white border-2 border-dashed border-fb-blue text-fb-blue w-full py-3 rounded-lg font-bold hover:bg-fb-light transition flex justify-center items-center gap-2">
-                            <i class="fa-solid fa-plus"></i> <span data-i18n="btnAddRule">เพิ่มกฎใหม่</span>
-                        </button>
-                        <button onclick="window.saveRules(this)" class="bg-fb-blue text-white w-full py-3 rounded-lg font-bold shadow-md hover:bg-fb-dark transition"><i class="fa-solid fa-floppy-disk mr-2"></i> <span data-i18n="btnSaveRule">บันทึกกฎทั้งหมดลง Cloud</span></button>
-                    </div>
-                </div>
-
                 <!-- SECTION: A/B Testing -->
                 <div id="section-abtest" class="hidden animate-fade-in space-y-6">
                     <div class="flex justify-between items-end">
@@ -591,6 +519,116 @@
                     </div>
                 </div>
 
+                <!-- SECTION: Goal Simulator -->
+                <div id="section-goal" class="hidden animate-fade-in space-y-6">
+                    <div>
+                        <h2 class="text-2xl font-bold text-gray-800">จำลองเป้าหมายธุรกิจ (Goal Simulator)</h2>
+                        <p class="text-gray-500">คำนวณแผนการยิงแอดและเป้าหมายคนทัก/คนซื้อ เพื่อให้ได้ยอดขายและกำไรตามที่ต้องการ</p>
+                    </div>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <div class="col-span-1 lg:col-span-2 bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                                <div>
+                                    <label class="block text-sm font-bold text-gray-700 mb-1">เป้ายอดขายต่อปี</label>
+                                    <div class="flex items-center border border-gray-300 rounded-lg overflow-hidden bg-gray-50">
+                                        <span class="px-3 text-gray-500 font-bold border-r border-gray-300">฿</span>
+                                        <input type="number" id="glSales" placeholder="600000" value="600000" class="w-full p-2 outline-none bg-white font-bold text-gray-800">
+                                    </div>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-bold text-gray-700 mb-1">ราคาขายต่อชิ้น</label>
+                                    <div class="flex items-center border border-gray-300 rounded-lg overflow-hidden bg-gray-50">
+                                        <span class="px-3 text-gray-500 font-bold border-r border-gray-300">฿</span>
+                                        <input type="number" id="glPrice" placeholder="690" value="690" class="w-full p-2 outline-none bg-white font-bold text-gray-800">
+                                    </div>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-bold text-gray-700 mb-1">ต้นทุนสินค้า</label>
+                                    <div class="flex items-center border border-gray-300 rounded-lg overflow-hidden bg-gray-50">
+                                        <span class="px-3 text-gray-500 font-bold border-r border-gray-300">฿</span>
+                                        <input type="number" id="glCost" placeholder="100" value="100" class="w-full p-2 outline-none bg-white font-bold text-gray-800">
+                                    </div>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-bold text-gray-700 mb-1">ค่าใช้จ่ายอื่นๆ (ส่ง, แอดมิน, ฯลฯ)</label>
+                                    <div class="flex items-center border border-gray-300 rounded-lg overflow-hidden bg-gray-50">
+                                        <span class="px-3 text-gray-500 font-bold border-r border-gray-300">฿</span>
+                                        <input type="number" id="glOther" placeholder="75" value="75" class="w-full p-2 outline-none bg-white font-bold text-gray-800">
+                                    </div>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-bold text-gray-700 mb-1">% ปิดการขายขั้นต่ำ (Closing Rate)</label>
+                                    <div class="flex items-center border border-gray-300 rounded-lg overflow-hidden bg-gray-50">
+                                        <input type="number" id="glCR" placeholder="30" value="30" class="w-full p-2 outline-none bg-white font-bold text-gray-800 text-right">
+                                        <span class="px-3 text-gray-500 font-bold border-l border-gray-300">%</span>
+                                    </div>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-bold text-gray-700 mb-1">% ค่าแอดที่รับได้เป้าหมาย</label>
+                                    <div class="flex items-center border border-gray-300 rounded-lg overflow-hidden bg-gray-50">
+                                        <input type="number" id="glAdsPct" placeholder="30" value="30" class="w-full p-2 outline-none bg-white font-bold text-gray-800 text-right">
+                                        <span class="px-3 text-gray-500 font-bold border-l border-gray-300">%</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="flex gap-3 mt-2">
+                                <button onclick="window.clearGoalData()" class="px-5 py-3.5 bg-gray-100 text-gray-600 rounded-lg font-bold hover:bg-gray-200 transition-colors flex justify-center items-center gap-2">
+                                    <i class="fa-solid fa-eraser"></i> <span>ล้างข้อมูล</span>
+                                </button>
+                                <button onclick="window.calculateGoal()" class="flex-1 bg-rose-50 text-rose-600 py-3.5 rounded-lg font-bold hover:bg-rose-100 transition-colors flex justify-center items-center gap-2 text-base shadow-sm">
+                                    <i class="fa-solid fa-bullseye"></i> <span>คำนวณเป้าหมายรายวัน/เดือน/ปี</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="space-y-4">
+                            <!-- NEW: Monthly Sales Target Card -->
+                            <div class="bg-gradient-to-br from-emerald-50 to-green-50 rounded-xl shadow-sm border border-emerald-200 p-5 flex flex-col justify-center items-center text-center">
+                                <p class="text-xs font-bold text-emerald-700 mb-1">เป้ายอดขายต่อเดือน (Monthly Target)</p>
+                                <h3 id="glResMonthlySales" class="text-3xl font-black text-emerald-600">฿0</h3>
+                                <p class="text-xs text-emerald-600/70 mt-2 font-medium">ยอดขั้นต่ำที่ต้องทำให้ได้ต่อเดือน</p>
+                            </div>
+
+                            <div class="bg-white rounded-xl shadow-sm border-2 border-rose-200 p-5 flex flex-col justify-center items-center text-center">
+                                <p class="text-xs font-bold text-gray-500 mb-1">เป้าหมายต้นทุนต่อการทัก (Cost per Msg)</p>
+                                <h3 id="glResCostMsg" class="text-3xl font-black text-rose-500">฿0.00</h3>
+                                <p class="text-xs text-gray-400 mt-2">ห้ามให้ค่าทักเกินกว่านี้</p>
+                            </div>
+
+                            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5 flex flex-col justify-center items-center text-center">
+                                <p class="text-xs font-bold text-gray-500 mb-1">ต้นทุนซื้อสูงสุดที่รับได้ (Target CPA)</p>
+                                <h3 id="glResCPA" class="text-3xl font-bold text-gray-700">฿0.00</h3>
+                            </div>
+
+                            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5 flex flex-col justify-center items-center text-center">
+                                <p class="text-xs font-bold text-gray-500 mb-1">ROAS เป้าหมาย (Target ROAS)</p>
+                                <h3 id="glResROAS" class="text-3xl font-bold text-fb-blue">0.00x</h3>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Breakdown Table -->
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-x-auto">
+                        <table class="w-full text-left border-collapse whitespace-nowrap">
+                            <thead class="bg-gray-50 text-xs text-text-muted font-bold uppercase shadow-sm border-b border-gray-200">
+                                <tr>
+                                    <th class="p-4">ระยะเวลา</th>
+                                    <th class="p-4 text-right">ยอดขาย (Sales)</th>
+                                    <th class="p-4 text-right">จำนวนทัก (Msgs)</th>
+                                    <th class="p-4 text-right text-emerald-600">ออเดอร์ (Orders)</th>
+                                    <th class="p-4 text-right text-rose-500">งบยิงแอด (Ads Budget)</th>
+                                    <th class="p-4 text-right text-indigo-600">กำไรสุทธิ (Net Profit)</th>
+                                </tr>
+                            </thead>
+                            <tbody id="goalTableBody" class="text-sm">
+                                <tr><td colspan="6" class="p-6 text-center text-gray-500">กรุณากดคำนวณเป้าหมาย</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
                 <!-- SECTION: Budget Planner -->
                 <div id="section-planner" class="hidden animate-fade-in space-y-6">
                     <div>
@@ -697,6 +735,79 @@
                                 <h3 id="resTotalCamps" class="text-xl font-bold text-gray-700">0 แคมเปญ</h3>
                             </div>
                         </div>
+                    </div>
+                </div>
+
+                <!-- SECTION: Automated Rules -->
+                <div id="section-rules" class="hidden animate-fade-in space-y-6">
+                    <div class="flex justify-between items-end max-w-4xl">
+                        <div>
+                            <h2 class="text-2xl font-bold text-gray-800" data-i18n="ruleTitle">กฎอัตโนมัติ (Automated Rules)</h2>
+                            <p class="text-gray-500" data-i18n="ruleSubtitle">ตั้งเงื่อนไขเพื่อเปิด/ปิดแอด หรือตั้งเวลาเปิด-ปิดอัตโนมัติ</p>
+                        </div>
+                        <div class="flex gap-2">
+                            <button onclick="window.showRuleLogs()" class="bg-white border-2 border-gray-200 text-gray-700 px-4 py-2 rounded-lg font-bold shadow-sm hover:bg-gray-50 transition flex items-center">
+                                <i class="fa-solid fa-clock-rotate-left mr-2"></i> ประวัติการทำงาน
+                            </button>
+                            <button onclick="window.runAutomatedRules()" class="bg-indigo-500 text-white px-4 py-2 rounded-lg font-bold shadow-sm hover:bg-indigo-600 transition flex items-center">
+                                <i class="fa-solid fa-play mr-2"></i> รันกฎเดี๋ยวนี้
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- FOLDER MANAGEMENT TABS -->
+                    <div class="max-w-4xl bg-white border border-gray-200 rounded-xl p-4 mb-6 shadow-sm">
+                        <div class="flex items-center justify-between mb-3">
+                            <h3 class="font-bold text-gray-800 text-sm"><i class="fa-regular fa-folder-open text-fb-blue mr-1"></i> <span data-i18n="ruleFolderLabel">โฟลเดอร์สำหรับแยกกฎ</span></h3>
+                            <button onclick="window.addFolder()" class="text-xs font-bold text-fb-blue hover:underline"><i class="fa-solid fa-plus mr-1"></i> <span data-i18n="ruleAddFolder">เพิ่มโฟลเดอร์</span></button>
+                        </div>
+                        <div class="flex gap-2 overflow-x-auto pb-2 mb-4 border-b border-gray-100 custom-scrollbar" id="folderTabsContainer">
+                            <!-- Tabs injected via JS -->
+                        </div>
+                        <div class="flex flex-col md:flex-row gap-4 items-end bg-gray-50 p-4 rounded-lg border border-gray-200">
+                            <div class="flex-1 w-full">
+                                <label class="block text-xs font-bold text-gray-700 mb-1" data-i18n="ruleFolderName">ชื่อโฟลเดอร์ (Folder Name)</label>
+                                <input type="text" id="activeFolderName" oninput="window.updateFolderSetting()" class="w-full border border-gray-300 rounded-lg p-2.5 outline-none font-bold text-gray-800">
+                            </div>
+                            <div class="flex-1 w-full">
+                                <label class="block text-xs font-bold text-gray-700 mb-1" data-i18n="ruleKeyword">คีย์เวิร์ดในชื่อแคมเปญ (เว้นว่าง = ใช้กับทุกแคมเปญ)</label>
+                                <input type="text" id="activeFolderKeyword" oninput="window.updateFolderSetting()" placeholder="เช่น PROMO_" class="w-full border border-gray-300 rounded-lg p-2.5 outline-none font-mono text-sm text-fb-blue bg-blue-50">
+                            </div>
+                            <button onclick="window.deleteCurrentFolder()" class="bg-white border border-red-200 text-red-500 px-4 py-2.5 rounded-lg font-bold hover:bg-red-50 shrink-0 transition" title="ลบโฟลเดอร์นี้"><i class="fa-solid fa-trash"></i></button>
+                        </div>
+                    </div>
+
+                    <div class="bg-indigo-50 border border-indigo-200 rounded-xl p-5 max-w-4xl flex items-center justify-between shadow-sm">
+                        <div class="flex items-center gap-4">
+                            <div class="w-12 h-12 bg-indigo-500 text-white rounded-full flex items-center justify-center text-2xl shadow-inner">
+                                <i class="fa-solid fa-robot"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-bold text-indigo-900 text-base">ระบบบอทอัตโนมัติ (Auto-Bot)</h3>
+                                <p class="text-xs font-medium mt-0.5" id="botStatusText"><span class="text-gray-500 font-bold">🔴 ปิดการทำงาน</span> (จะรันทุกโฟลเดอร์เมื่อเปิด)</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-4">
+                            <select id="autoBotInterval" class="border border-indigo-300 rounded-lg p-2.5 text-sm outline-none text-indigo-900 font-bold bg-white shadow-sm" onchange="window.updateBotInterval()">
+                                <option value="15">สแกนทุกๆ 15 นาที</option>
+                                <option value="30">สแกนทุกๆ 30 นาที</option>
+                                <option value="60">สแกนทุกๆ 1 ชั่วโมง</option>
+                            </select>
+                            <button id="btnToggleBot" onclick="window.toggleAutoBotAction()" class="bg-emerald-500 text-white px-5 py-2.5 rounded-lg font-bold shadow-md hover:bg-emerald-600 transition flex items-center">
+                                <i class="fa-solid fa-power-off mr-2"></i> <span>เริ่มบอท</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div id="rulesListContainer" class="space-y-6">
+                        <!-- Rules injected via JS -->
+                    </div>
+
+                    <div class="max-w-4xl mt-6 space-y-4">
+                        <button onclick="window.addNewRuleBlock()" class="bg-white border-2 border-dashed border-fb-blue text-fb-blue w-full py-3 rounded-lg font-bold hover:bg-fb-light transition flex justify-center items-center gap-2">
+                            <i class="fa-solid fa-plus"></i> <span data-i18n="btnAddRule">เพิ่มกฎใหม่</span>
+                        </button>
+                        <button onclick="window.saveRules(this)" class="bg-fb-blue text-white w-full py-3 rounded-lg font-bold shadow-md hover:bg-fb-dark transition"><i class="fa-solid fa-floppy-disk mr-2"></i> <span data-i18n="btnSaveRule">บันทึกกฎทั้งหมดลง Cloud</span></button>
                     </div>
                 </div>
 
@@ -2901,6 +3012,95 @@
             document.getElementById('resTargetROAS').innerText = '0.00x';
             document.getElementById('resNetProfit').innerText = '฿0.00';
             document.getElementById('resNetProfit').className = 'text-3xl font-bold text-emerald-600';
+            window.showToast("ล้างข้อมูลเรียบร้อยแล้ว");
+        };
+
+        window.calculateGoal = function() {
+            const sales = parseFloat(document.getElementById('glSales').value) || 0;
+            const price = parseFloat(document.getElementById('glPrice').value) || 0;
+            const cost = parseFloat(document.getElementById('glCost').value) || 0;
+            const other = parseFloat(document.getElementById('glOther').value) || 0;
+            const cr = parseFloat(document.getElementById('glCR').value) || 30;
+            const adsPct = parseFloat(document.getElementById('glAdsPct').value) || 30;
+
+            if (sales <= 0 || price <= 0 || cr <= 0 || adsPct <= 0) return window.showToast("กรุณากรอกข้อมูลเป้าหมายและราคาให้ครบถ้วน");
+
+            const crDecimal = cr / 100;
+            const adsDecimal = adsPct / 100;
+
+            // ไม่ต้องปัดเศษยอดขาย เพื่อให้ตัวเลขตรงกับที่ผู้ใช้กรอกเป๊ะๆ
+            const actualSalesYear = sales;
+            const ordersYear = actualSalesYear / price;
+            const msgsYear = ordersYear / crDecimal;
+            
+            // เป้ายอดขายต่อเดือน (ตามคำขอ)
+            const actualSalesMonth = actualSalesYear / 12;
+            
+            // เป้าหมาย KPI ต้นทุน
+            const targetCPA = price * adsDecimal;
+            const targetCostMsg = targetCPA * crDecimal;
+            const targetROAS = targetCPA > 0 ? price / targetCPA : 0; 
+
+            // คำนวณต้นทุนและกำไร
+            const adsYear = actualSalesYear * adsDecimal;
+            const cogsYear = ordersYear * (cost + other);
+            const profitYear = actualSalesYear - adsYear - cogsYear;
+
+            // ตัวช่วยแปลงหน่วย
+            const calcRow = (label, divider) => {
+                return {
+                    label: label,
+                    sales: actualSalesYear / divider,
+                    msgs: msgsYear / divider,
+                    orders: ordersYear / divider,
+                    ads: adsYear / divider,
+                    profit: profitYear / divider
+                };
+            };
+
+            const rows = [
+                calcRow('ต่อวัน (Daily)', 365),
+                calcRow('ต่อสัปดาห์ (Weekly)', 52),
+                calcRow('ต่อเดือน (Monthly)', 12),
+                { label: 'ต่อปี (Yearly)', sales: actualSalesYear, msgs: msgsYear, orders: ordersYear, ads: adsYear, profit: profitYear }
+            ];
+
+            // Render KPI Cards
+            const elMonthlySales = document.getElementById('glResMonthlySales');
+            if (elMonthlySales) {
+                elMonthlySales.innerText = '฿' + actualSalesMonth.toLocaleString(undefined, {minimumFractionDigits:0, maximumFractionDigits:0});
+            }
+            
+            document.getElementById('glResCostMsg').innerText = '฿' + targetCostMsg.toFixed(2);
+            document.getElementById('glResCPA').innerText = '฿' + targetCPA.toFixed(2);
+            document.getElementById('glResROAS').innerText = targetROAS.toFixed(2) + 'x';
+
+            // Render Table Rows
+            const tbody = document.getElementById('goalTableBody');
+            tbody.innerHTML = rows.map(r => `
+                <tr class="border-b border-gray-100 hover:bg-gray-50 transition">
+                    <td class="p-4 font-bold text-gray-700">${r.label}</td>
+                    <td class="p-4 text-right font-medium">฿${r.sales.toLocaleString(undefined, {minimumFractionDigits:0, maximumFractionDigits:0})}</td>
+                    <td class="p-4 text-right font-bold text-gray-800">${r.msgs.toLocaleString(undefined, {minimumFractionDigits:0, maximumFractionDigits:1})}</td>
+                    <td class="p-4 text-right font-bold text-emerald-600">${r.orders.toLocaleString(undefined, {minimumFractionDigits:0, maximumFractionDigits:1})}</td>
+                    <td class="p-4 text-right font-medium text-rose-500">฿${r.ads.toLocaleString(undefined, {minimumFractionDigits:0, maximumFractionDigits:0})}</td>
+                    <td class="p-4 text-right font-black text-indigo-600">฿${r.profit.toLocaleString(undefined, {minimumFractionDigits:0, maximumFractionDigits:0})}</td>
+                </tr>
+            `).join('');
+
+            window.showToast("จำลองแผนการเติบโตเรียบร้อย!");
+        };
+
+        window.clearGoalData = function() {
+            ['glSales', 'glPrice', 'glCost', 'glOther', 'glCR', 'glAdsPct'].forEach(id => document.getElementById(id).value = '');
+            
+            const elMonthlySales = document.getElementById('glResMonthlySales');
+            if (elMonthlySales) elMonthlySales.innerText = '฿0';
+            
+            document.getElementById('glResCostMsg').innerText = '฿0.00';
+            document.getElementById('glResCPA').innerText = '฿0.00';
+            document.getElementById('glResROAS').innerText = '0.00x';
+            document.getElementById('goalTableBody').innerHTML = '<tr><td colspan="6" class="p-6 text-center text-gray-500">กรุณากดคำนวณเป้าหมาย</td></tr>';
             window.showToast("ล้างข้อมูลเรียบร้อยแล้ว");
         };
 
