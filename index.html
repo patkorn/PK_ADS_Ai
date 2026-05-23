@@ -2514,7 +2514,7 @@
                             <select class="operator-select w-24 border border-gray-300 rounded-md p-2 outline-none text-sm font-bold text-gray-700">
                                 <option value=">" ${cond.operator === '>' ? 'selected' : ''}>มากกว่า (>)</option>
                                 <option value="<" ${cond.operator === '<' ? 'selected' : ''}>น้อยกว่า (<)</option>
-                                <option value="==" ${cond.operator === '==' || cond.operator === '=' ? 'selected' : ''}>เท่ากับ (==)</option>
+                                <option value="=" ${cond.operator === '=' || cond.operator === '=' ? 'selected' : ''}>เท่ากับ (=)</option>
                             </select>
                             <input type="number" value="${cond.value !== undefined ? cond.value : ''}" placeholder="ระบุค่า" class="val-input w-24 border border-gray-300 rounded-md p-2 outline-none text-sm text-center font-bold">
                             <button onclick="window.removeCondition(this)" class="text-red-400 hover:text-white hover:bg-red-500 w-8 h-8 rounded-md shrink-0 transition flex items-center justify-center border border-red-200 bg-white"><i class="fa-solid fa-trash"></i></button>
@@ -2625,7 +2625,7 @@
                     <select class="operator-select w-24 border border-gray-300 rounded-md p-2 outline-none text-sm font-bold text-gray-700">
                         <option value="<">น้อยกว่า (<)</option>
                         <option value=">">มากกว่า (>)</option>
-                        <option value="==">เท่ากับ (==)</option>
+                        <option value="=">เท่ากับ (=)</option>
                     </select>
                     <input type="number" placeholder="ระบุค่า" class="val-input w-24 border border-gray-300 rounded-md p-2 outline-none text-sm text-center font-bold">
                     <button onclick="window.removeCondition(this)" class="text-red-400 hover:text-white hover:bg-red-500 w-8 h-8 rounded-md shrink-0 transition flex items-center justify-center border border-red-200 bg-white"><i class="fa-solid fa-trash"></i></button>
