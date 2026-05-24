@@ -1367,11 +1367,20 @@
             }
             window.updateAdAccountDropdown();
 
-            if (!loggedInEmployee.rule_folders) {
-                loggedInEmployee.rule_folders = [];
-            }
+            // เช็คและรวมข้อมูล Rule Logs จาก LocalStorage ป้องกันข้อมูลเก่าทับ
+            const logKey = `rule_logs_${loggedInEmployee.id}`;
+            const localLogs = JSON.parse(localStorage.getItem(logKey) || '[]');
+
             if (!loggedInEmployee.rule_logs) {
                 loggedInEmployee.rule_logs = [];
+            }
+            
+            if (localLogs.length > loggedInEmployee.rule_logs.length || loggedInEmployee.rule_logs.length === 0) {
+                loggedInEmployee.rule_logs = localLogs;
+            }
+
+            if (!loggedInEmployee.rule_folders) {
+                loggedInEmployee.rule_folders = [];
             }
             
             if (loggedInEmployee.rule_folders.length === 0) {
@@ -2713,7 +2722,7 @@
             }
         };
 
-        // การบันทึกและแสดง Logs รูปแบบใหม่ ข้ามอุปกรณ์ได้โดยการเก็บลง Firebase
+        // NEW: Real-time Rule Logs & Storage Merge
         window.addRuleLog = async function(campName, ruleName, actionType, detail) {
             if(!loggedInEmployee) return;
             const now = new Date();
@@ -2732,9 +2741,15 @@
             loggedInEmployee.rule_logs.unshift(newLog);
             if(loggedInEmployee.rule_logs.length > 100) loggedInEmployee.rule_logs = loggedInEmployee.rule_logs.slice(0, 100);
 
-            // บันทึกลง Local Storage กันเหนียว
+            // บันทึกลง Local Storage เสมอ
             const logKey = `rule_logs_${loggedInEmployee.id}`;
             localStorage.setItem(logKey, JSON.stringify(loggedInEmployee.rule_logs));
+
+            // ตรวจสอบและอัปเดตหน้าต่างประวัติหากผู้ใช้เปิดอยู่ (Real-time update)
+            const logModal = document.getElementById('ruleLogsModal');
+            if (logModal && !logModal.classList.contains('hidden')) {
+                window.showRuleLogs();
+            }
 
             // บันทึกขึ้น Cloud Firebase
             try {
@@ -2749,13 +2764,16 @@
         window.showRuleLogs = function() {
             if(!loggedInEmployee) return;
             
+            // ดึงข้อมูล Local มาเทียบกับ Cloud เพื่อป้องกันข้อมูลที่เซฟไม่ติด
+            const logKey = `rule_logs_${loggedInEmployee.id}`;
+            const localLogs = JSON.parse(localStorage.getItem(logKey) || '[]');
+            
             let logs = loggedInEmployee.rule_logs || [];
             
-            // กรณีโหลดมาจาก Firebase ไม่ทัน ให้เช็คจาก Local
-            if (logs.length === 0) {
-                const logKey = `rule_logs_${loggedInEmployee.id}`;
-                logs = JSON.parse(localStorage.getItem(logKey) || '[]');
-                if(logs.length > 0) loggedInEmployee.rule_logs = logs;
+            // กรณี Firebase ไม่อัปเดต ให้ใช้ Local เป็นหลักหากใหม่กว่า
+            if (localLogs.length > logs.length || logs.length === 0) {
+                logs = localLogs;
+                loggedInEmployee.rule_logs = localLogs;
             }
 
             const tbody = document.getElementById('ruleLogsTableBody');
@@ -2843,10 +2861,7 @@
                     if (!rule.conditions || rule.conditions.length === 0) continue;
 
                     for (let camp of targetCampaigns) {
-                        // เช็คข้ามกรณีที่สถานะตรงกับที่ต้องการจะทำอยู่แล้ว
-                        if (targetAction === 'activate' && camp.status === 'ACTIVE') continue;
-                        if (targetAction === 'pause' && camp.status !== 'ACTIVE') continue;
-
+                        
                         let ruleResult = null;
 
                         for (let idx = 0; idx < rule.conditions.length; idx++) {
@@ -2963,6 +2978,16 @@
                             }
 
                             if (canExecute) {
+                                // NEW: เช็คข้ามกรณีที่สถานะตรงกับที่ต้องการจะทำอยู่แล้ว แต่บันทึก Log เตือนไว้แทน (เพื่อไม่ให้รู้สึกว่าประวัติหายไป)
+                                if (targetAction === 'activate' && camp.status === 'ACTIVE') {
+                                    window.addRuleLog(camp.name, rule.name, 'ACTIVATE', `[ข้ามการทำงาน] แคมเปญนี้เปิดใช้งานอยู่แล้ว`);
+                                    continue;
+                                }
+                                if (targetAction === 'pause' && camp.status !== 'ACTIVE') {
+                                    window.addRuleLog(camp.name, rule.name, 'PAUSE', `[ข้ามการทำงาน] แคมเปญนี้ถูกปิดไปแล้ว`);
+                                    continue;
+                                }
+
                                 triggeredCount++;
                                 if (targetAction === 'activate') {
                                     const success = await window.toggleRealCampaign(camp.id, true);
